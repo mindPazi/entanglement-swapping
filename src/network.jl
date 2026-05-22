@@ -2,6 +2,7 @@ module Network
 
 using QuantumSavory
 using Graphs
+using Distributions: Geometric
 
 """
 Create a linear quantum network: Alice + N repeaters + Bob.
@@ -49,7 +50,24 @@ Generate Bell pairs with success probability p_success on each link.
 Returns the total time (number of attempts of the slowest link).
 """
 function generate_entanglement_probabilistic!(net, N::Int, p_success::Float64)
-    # TODO: for each link, sample from geometric distribution and apply decoherence
+    bell = (Z1⊗Z1 + Z2⊗Z2) / sqrt(2)
+    n_links = N + 1
+    gen_times = [rand(Geometric(p_success)) + 1 for _ in 1:n_links]
+    T = maximum(gen_times)
+
+    for i in 1:n_links
+        slot_left = i == 1 ? 1 : 2
+        initialize!((net[i][slot_left], net[i + 1][1]), bell; time=Float64(gen_times[i]))
+    end
+
+    all_slots = vcat(
+        [net[1][1]],
+        vcat([[net[k][1], net[k][2]] for k in 2:(N + 1)]...),
+        [net[N + 2][1]]
+    )
+    uptotime!(all_slots, Float64(T))
+
+    T
 end
 
 end # module
