@@ -47,9 +47,11 @@ end
 
 """
 Generate Bell pairs with success probability p_success on each link.
-Returns the total time (number of attempts of the slowest link).
+Returns (total_time, gen_times), where total_time is the slowest link.
 """
 function generate_entanglement_probabilistic!(net, N::Int, p_success::Float64)
+    0.0 < p_success <= 1.0 || throw(ArgumentError("p_success must be in (0, 1]"))
+
     bell = (Z1⊗Z1 + Z2⊗Z2) / sqrt(2)
     n_links = N + 1
     gen_times = [rand(Geometric(p_success)) + 1 for _ in 1:n_links]
@@ -67,7 +69,7 @@ function generate_entanglement_probabilistic!(net, N::Int, p_success::Float64)
     )
     uptotime!(all_slots, Float64(T))
 
-    T
+    (T, gen_times)
 end
 
 end # module

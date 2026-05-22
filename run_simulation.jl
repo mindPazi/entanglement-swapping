@@ -31,7 +31,7 @@ function main()
         end
     end
     PlotGeneration.plot_time_vs_psuccess(results_time, P_SUCCESS_RANGE; N_values=N_VALUES)
-    println("  -> plot_time_vs_psuccess.png\n")
+    println("  -> figures/simulation/plot_time_vs_psuccess.png\n")
 
     # --- Plot 2: Fidelity vs p_success for different p_w ---
     println("--- Plot 2: Fidelity vs p_success (N=3) ---")
@@ -45,7 +45,7 @@ function main()
         end
     end
     PlotGeneration.plot_fidelity_vs_psuccess(results_fidelity, P_SUCCESS_RANGE; N=N_fixed, pw_values=PW_VALUES)
-    println("  -> plot_fidelity_vs_psuccess.png\n")
+    println("  -> figures/simulation/plot_fidelity_vs_psuccess.png\n")
 
     # --- Extra: Fidelity vs N ---
     println("--- Plot 3: Fidelity vs N ---")
@@ -57,7 +57,7 @@ function main()
         println("  N=$n -> F=$fm ± $fs")
     end
     PlotGeneration.plot_fidelity_vs_N(results_vs_N, N_RANGE; p_success=0.5, p_w=0.05)
-    println("  -> plot_fidelity_vs_N.png\n")
+    println("  -> figures/simulation/plot_fidelity_vs_N.png\n")
 
     # --- Extra: Heatmap ---
     println("--- Plot 4: Fidelity heatmap (N=3) ---")
@@ -71,9 +71,11 @@ function main()
         println("  p_s=$ps done")
     end
     PlotGeneration.plot_heatmap_fidelity(results_heat, P_SUCCESS_RANGE, PW_RANGE; N=3)
-    println("  -> plot_heatmap_fidelity.png\n")
+    println("  -> figures/simulation/plot_heatmap_fidelity.png\n")
 
     println("=== Done ===")
 end
 
-main()
+if abspath(PROGRAM_FILE) == abspath(@__FILE__)
+    main()
+end

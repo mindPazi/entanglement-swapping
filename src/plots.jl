@@ -2,6 +2,13 @@ module PlotGeneration
 
 using Plots
 
+const SIM_FIG_DIR = joinpath("figures", "simulation")
+
+function simulation_plot_path(filename)
+    mkpath(SIM_FIG_DIR)
+    joinpath(SIM_FIG_DIR, filename)
+end
+
 """
 Plot 1: Distribution time vs p_success, with curves for different N values.
 `results` is a Dict (N, p_s) => (f_mean, f_std, t_mean, t_std).
@@ -15,7 +22,7 @@ function plot_time_vs_psuccess(results, p_success_range; N_values=[1, 3, 5])
         t_stds  = [results[(N, p)][4] for p in ps]
         plot!(plt, ps, t_means, ribbon=t_stds, fillalpha=0.2, label="N=$N", marker=:circle, ms=3)
     end
-    savefig(plt, "plot_time_vs_psuccess.png")
+    savefig(plt, simulation_plot_path("plot_time_vs_psuccess.png"))
     plt
 end
 
@@ -32,7 +39,7 @@ function plot_fidelity_vs_psuccess(results, p_success_range; N=3, pw_values=[0.0
         f_stds  = [results[(pw, p)][2] for p in ps]
         plot!(plt, ps, f_means, ribbon=f_stds, fillalpha=0.2, label="p_w=$pw", marker=:circle, ms=3)
     end
-    savefig(plt, "plot_fidelity_vs_psuccess.png")
+    savefig(plt, simulation_plot_path("plot_fidelity_vs_psuccess.png"))
     plt
 end
 
@@ -48,7 +55,7 @@ function plot_fidelity_vs_N(results, N_range; p_success=0.5, p_w=0.05)
                xlabel="N (repeaters)", ylabel="Fidelity (mean)",
                title="Fidelity vs N (p_s=$p_success, p_w=$p_w)",
                legend=false, marker=:circle, ms=3)
-    savefig(plt, "plot_fidelity_vs_N.png")
+    savefig(plt, simulation_plot_path("plot_fidelity_vs_N.png"))
     plt
 end
 
@@ -63,7 +70,7 @@ function plot_heatmap_fidelity(results, p_success_range, pw_range; N=3)
     plt = heatmap(ps, pws, F_matrix,
                   xlabel="p_success", ylabel="p_w", title="Fidelity heatmap (N=$N)",
                   color=:viridis, clims=(0.25, 1.0))
-    savefig(plt, "plot_heatmap_fidelity.png")
+    savefig(plt, simulation_plot_path("plot_heatmap_fidelity.png"))
     plt
 end
 

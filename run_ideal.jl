@@ -14,10 +14,12 @@ function main()
     println("=== Ideal case validation ===\n")
 
     for N in [1, 2, 3, 5]
-        fidelity, time = Metrics.single_run(N; p_success=1.0, p_w=0.0)
+        fidelity, time = Metrics.single_run(N; p_success=1.0, p_w=0.0, ideal=true)
         status = fidelity ≈ 1.0 ? "OK" : "FAIL"
         println("N=$N → F=$fidelity, T=$time [$status]")
     end
 end
 
-main()
+if abspath(PROGRAM_FILE) == abspath(@__FILE__)
+    main()
+end

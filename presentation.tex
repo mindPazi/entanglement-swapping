@@ -85,6 +85,7 @@
 \usepackage{amsmath, amssymb, amsfonts}
 \usepackage{physics}
 \usepackage{graphicx}
+\graphicspath{{figures/simulation/}{figures/analysis/}{simulation/}{analysis/}{./}}
 \usepackage{tikz}
 \usetikzlibrary{positioning, arrows.meta, calc, decorations.pathmorphing}
 \usepackage{booktabs}
@@ -101,7 +102,7 @@
 \title{Entanglement Swapping \\ in Quantum Repeater Chains}
 \subtitle{Monte Carlo Simulation with QuantumSavory.jl}
 \author{Andrea Gennari}
-\date{A.Y.\ 2025/2026 --- Quantum Computing}
+\date{A.Y.\ 2025/2026, Quantum Computing}
 
 \begin{document}
 
@@ -145,27 +146,25 @@
   \begin{columns}[c]
     \begin{column}{0.55\textwidth}
       \begin{itemize}
-        \item Direct qubit transmission over optical fiber suffers
-              \alert{exponential losses} with distance
-        \item The \textbf{no-cloning theorem} forbids classical amplification
-        \item Solution: a chain of \textbf{quantum repeaters} that distribute
-              entanglement hop-by-hop and extend it end-to-end
+        \item Optical fiber: \alert{exponential losses} with distance
+        \item \textbf{No-cloning theorem}: no classical amplification
+        \item \textbf{Quantum repeaters}: hop-by-hop entanglement distribution
       \end{itemize}
       \vskip 1em
       \begin{block}{Project Goal}
-        Simulate Alice$\leftrightarrow$Bob entanglement distribution
-        across $N$ repeaters, studying \textbf{fidelity} and
-        \textbf{distribution time} as a function of noise.
+        Simulate Alice$\leftrightarrow$Bob entanglement across $N$ repeaters,
+        measuring \textbf{fidelity} and \textbf{distribution time} vs noise.
       \end{block}
     \end{column}
     \begin{column}{0.42\textwidth}
       \centering
       \begin{tikzpicture}[
-        node distance=1.4cm,
+        scale=0.75, every node/.style={scale=0.75},
+        node distance=1.2cm,
         qnode/.style={circle, draw=qBlue, fill=qBlue!15, thick,
-                      minimum size=1cm, font=\footnotesize\bfseries},
+                      minimum size=0.9cm, font=\footnotesize\bfseries},
         rep/.style={circle, draw=qCyan, fill=qCyan!15, thick,
-                    minimum size=0.9cm, font=\footnotesize\bfseries},
+                    minimum size=0.8cm, font=\footnotesize\bfseries},
         link/.style={thick, decorate,
                      decoration={snake, amplitude=1.2pt, segment length=6pt},
                      qBlue!70}
@@ -198,22 +197,20 @@
 \begin{frame}{The Protocol: Entanglement Swapping}
   \begin{columns}[c]
     \begin{column}{0.52\textwidth}
-      \textbf{Key idea:} a Bell State Measurement (BSM) at the repeater
-      ``teleports'' the entanglement to the remote nodes.
+      \textbf{Key idea:} a BSM at the repeater
+      teleports entanglement to the remote nodes.
 
       \vskip 0.8em
       \textbf{For each repeater $R_k$:}
       \begin{enumerate}
-        \item $R_k$ holds two qubits: one entangled with the left node,
-              the other with the right node
-        \item It performs a \textbf{BSM} on its two local qubits
-        \item The measurement outcome determines a Pauli correction
-        \item After correction, the remote nodes are entangled in $\phiplus$
+        \item Holds two qubits entangled with left and right nodes
+        \item \textbf{BSM} on the two local qubits
+        \item Outcome determines a Pauli correction
+        \item Remote nodes end up entangled in $\phiplus$
       \end{enumerate}
 
       \vskip 0.8em
-      \textbf{Chain of $N$ repeaters:} $N$ sequential swaps are performed
-      $\Rightarrow$ Alice and Bob share $\phiplus$.
+      $N$ repeaters $\to$ $N$ sequential swaps $\Rightarrow$ Alice and Bob share $\phiplus$.
     \end{column}
     \begin{column}{0.45\textwidth}
       \centering
@@ -264,42 +261,37 @@
 \begin{frame}{Noise Model: Depolarization}
   \begin{columns}[c]
     \begin{column}{0.50\textwidth}
-      \textbf{Noise source:} quantum memories undergo
-      depolarization while waiting.
-
-      \vskip 0.8em
-      The single-qubit depolarizing channel:
-      \[
-        \mathcal{E}(\rho) = (1 - p)\,\rho + \frac{p}{3}(X\rho X + Y\rho Y + Z\rho Z)
-      \]
+      Quantum memories \textbf{depolarize} while waiting.
 
       \vskip 0.5em
-      with the noise parameter tied to the waiting time:
+      {\small Single-qubit depolarizing channel (QuantumSavory convention):}
+      \[
+        \mathcal{E}(\rho) = (1 - p)\,\rho + p\,\frac{I}{2}
+      \]
+
+      \vskip 0.2em
+      {\small Noise tied to waiting time:}
       \[
         p(\Delta t) = 1 - e^{-\Delta t / \tau}
       \]
 
-      \vskip 0.5em
-      where $\tau = -1/\ln(1 - \pw)$ and $\pw$ is the
-      per-time-step depolarization rate.
+      \vskip 0.2em
+      {\small $\tau = -1/\ln(1 - \pw)$, \; $\pw$ = per-step depolarization rate.}
     \end{column}
     \begin{column}{0.46\textwidth}
       \begin{block}{Why Time Matters}
-        With probabilistic generation ($\ps < 1$), faster links
-        \textbf{wait} for slower ones. \\[0.4em]
-        Distribution time:
+        {\small If $\ps < 1$, faster links \textbf{wait} for slower ones.}
         \[
           T = \max_{i=1}^{N+1} T_i, \quad T_i \sim \mathrm{Geom}(\ps)
         \]
-        Larger $T$ $\Rightarrow$ more depolarization
-        $\Rightarrow$ lower fidelity.
+        {\small Larger $T$ $\Rightarrow$ more depolarization $\Rightarrow$ lower $F$.}
       \end{block}
 
-      \vskip 0.5em
+      \vskip 0.2em
       \begin{block}{Fidelity}
-        \[
-          F = \bra{\Phi^+} \rho_{AB} \ket{\Phi^+} = \frac{1 + \expval{XX} + \expval{ZZ} - \expval{YY}}{4}
-        \]
+        \vspace{-0.6em}
+        \[ F = \tfrac{1}{4}\!\left(1 + \expval{XX} + \expval{ZZ} - \expval{YY}\right) \]
+        \vspace{-0.8em}
       \end{block}
     \end{column}
   \end{columns}
@@ -311,20 +303,20 @@
 \begin{frame}{Simulator Architecture}
   \begin{columns}[c]
     \begin{column}{0.45\textwidth}
-      \textbf{Language:} Julia \\
+      \textbf{Language:} Julia \quad
       \textbf{Framework:} QuantumSavory.jl
 
-      \vskip 1em
+      \vskip 0.8em
       \begin{tikzpicture}[
         box/.style={draw=qBlue, thick, rounded corners=4pt,
-                    fill=qGray, minimum width=3.8cm, minimum height=0.8cm,
+                    fill=qGray, minimum width=3.8cm, minimum height=0.7cm,
                     font=\footnotesize},
         arr/.style={-{Stealth}, thick, qText!50}
       ]
-        \node[box] (net) at (0, 3) {\texttt{network.jl}};
-        \node[box] (sw)  at (0, 2) {\texttt{swapping.jl}};
-        \node[box] (me)  at (0, 1) {\texttt{metrics.jl}};
-        \node[box] (pl)  at (0, 0) {\texttt{plots.jl}};
+        \node[box] (net) at (0, 2.6) {\texttt{network.jl}};
+        \node[box] (sw)  at (0, 1.75) {\texttt{swapping.jl}};
+        \node[box] (me)  at (0, 0.9) {\texttt{metrics.jl}};
+        \node[box] (pl)  at (0, 0.05) {\texttt{plots.jl}};
 
         \draw[arr] (net) -- (sw);
         \draw[arr] (sw) -- (me);
@@ -338,22 +330,27 @@
     \end{column}
     \begin{column}{0.52\textwidth}
       \begin{block}{Linear network: Alice + $N$ repeaters + Bob}
-        \begin{itemize}
+        \vspace{-0.3em}
+        {\small
+        \begin{itemize}\itemsep0em
           \item Alice and Bob: 1 memory slot each
           \item Each repeater: 2 slots (left + right)
           \item Topology: linear graph (\texttt{RegisterNet})
-        \end{itemize}
+        \end{itemize}}
+        \vspace{-0.3em}
       \end{block}
 
-      \vskip 0.5em
+      \vskip 0.2em
       \begin{block}{Simulation Pipeline}
-        \begin{enumerate}
-          \item Bell pair generation on each link (ideal or probabilistic)
-          \item Time evolution: \texttt{uptotime!} $\to$ depolarization
+        \vspace{-0.3em}
+        {\small
+        \begin{enumerate}\itemsep0em
+          \item Bell pair generation on each link
+          \item Time evolution (\texttt{uptotime!}) $\to$ depolarization
           \item Sequential swapping: $N$ BSMs
-          \item End-to-end fidelity measurement
-          \item Monte Carlo repetition ($M$ runs)
-        \end{enumerate}
+          \item Fidelity measurement + MC ($M$ runs)
+        \end{enumerate}}
+        \vspace{-0.3em}
       \end{block}
     \end{column}
   \end{columns}
@@ -365,8 +362,8 @@
 \begin{frame}{Phase 1: Ideal Case Validation}
   \begin{columns}[c]
     \begin{column}{0.48\textwidth}
-      \textbf{Test:} with no noise ($\pw = 0$) and deterministic generation
-      ($\ps = 1$), the fidelity must be \alert{exactly 1.0}.
+      \textbf{Test:} no noise ($\pw = 0$), deterministic ($\ps = 1$)
+      $\Rightarrow$ fidelity must be \alert{exactly 1.0}.
 
       \vskip 1em
       \renewcommand{\arraystretch}{1.3}
@@ -382,16 +379,15 @@
       \end{tabular}
 
       \vskip 1em
-      {\small This validates the implementation correctness:
-       swapping perfectly preserves $\phiplus$ in the absence of noise.}
+      {\small Swapping preserves $\phiplus$ perfectly without noise.}
     \end{column}
     \begin{column}{0.48\textwidth}
       \begin{block}{What it Validates}
         \begin{itemize}
-          \item Correct Bell pair initialization
-          \item BSM and Pauli corrections implemented correctly
-          \item Sequential swap composition for arbitrary $N$
-          \item Fidelity computation via observables $\expval{XX}, \expval{ZZ}, \expval{YY}$
+          \item Bell pair initialization
+          \item BSM + Pauli corrections
+          \item Sequential swap composition ($\forall N$)
+          \item Fidelity via $\expval{XX}, \expval{ZZ}, \expval{YY}$
         \end{itemize}
       \end{block}
 
@@ -417,14 +413,10 @@
 
       \vskip 0.8em
       \begin{itemize}
-        \item Distribution time scales as $\sim 1/\ps$
-              (each link requires $\sim \mathrm{Geom}(\ps)$ attempts)
-        \item The bottleneck is the \textbf{slowest link}:
-              $T = \max_i T_i$
-        \item More repeaters (large $N$) $\Rightarrow$ more links
-              $\Rightarrow$ the maximum grows
-        \item Shaded bands show the standard deviation:
-              high variability at low $\ps$
+        \item Time scales as $\sim 1/\ps$ (geometric attempts per link)
+        \item Bottleneck: \textbf{slowest link} $T = \max_i T_i$
+        \item More repeaters $\Rightarrow$ more links $\Rightarrow$ larger max
+        \item Shaded bands: std.\ dev.\ (high at low $\ps$)
       \end{itemize}
     \end{column}
   \end{columns}
@@ -444,14 +436,10 @@
 
       \vskip 0.8em
       \begin{itemize}
-        \item At low $\ps$, the waiting time is long
-              $\Rightarrow$ more depolarization $\Rightarrow$ $F$ drops
-        \item Effect amplified by noise: $\pw = 0.10$ causes
-              much stronger degradation than $\pw = 0.01$
-        \item At $\ps = 1$: $T = 1$, the fidelity converges to the
-              single-time-step depolarization value
-        \item \textbf{Tradeoff:} more reliable links reduce both
-              time and degradation
+        \item Low $\ps$ $\to$ long wait $\to$ more depolarization $\to$ $F$ drops
+        \item $\pw = 0.10$ degrades far more than $\pw = 0.01$
+        \item At $\ps = 1$: $T = 1$ and no inter-link waiting, so $F \to 1$
+        \item \textbf{Tradeoff:} reliable links reduce both time and degradation
       \end{itemize}
     \end{column}
   \end{columns}
@@ -471,15 +459,10 @@
 
       \vskip 0.8em
       \begin{itemize}
-        \item Fidelity \textbf{decreases monotonically} with $N$
-        \item Two combined effects:
-        \begin{itemize}
-          \item More links $\Rightarrow$ more accumulated noise
-          \item More links $\Rightarrow$ larger $T = \max_i T_i$
-        \end{itemize}
-        \item From $F \approx 0.91$ ($N=1$) to $F \approx 0.43$ ($N=7$)
-        \item The band widens: more repeaters $\Rightarrow$
-              more uncertainty
+        \item $F$ \textbf{decreases monotonically} with $N$
+        \item Two effects: more noise + larger $T = \max_i T_i$
+        \item $F \approx 0.91$ ($N\!=\!1$) to $F \approx 0.43$ ($N\!=\!7$)
+        \item Band widens with $N$: more uncertainty
       \end{itemize}
     \end{column}
   \end{columns}
@@ -498,16 +481,13 @@
       \textbf{Parameters:} $N = 3$, $M = 500$
 
       \vskip 0.8em
-      2D map of the mean fidelity in the $(\ps, \pw)$ space.
+      2D mean fidelity in $(\ps, \pw)$ space.
 
       \vskip 0.5em
       \begin{itemize}
-        \item \textbf{Top-right corner} (yellow): high $\ps$, low
-              $\pw$ $\Rightarrow$ $F \to 1$
-        \item \textbf{Bottom-left corner} (purple): low $\ps$, high
-              $\pw$ $\Rightarrow$ $F \to 0.25$ (fully mixed state)
-        \item The contours reveal \textbf{non-linearity}:
-              noise dominates at low $\ps$ due to the waiting time effect
+        \item \textbf{Top-right} (yellow): high $\ps$, low $\pw$ $\Rightarrow$ $F \to 1$
+        \item \textbf{Bottom-left} (purple): low $\ps$, high $\pw$ $\Rightarrow$ $F \to 0.25$
+        \item Contours show \textbf{non-linearity}: noise dominates at low $\ps$ (waiting time)
       \end{itemize}
     \end{column}
   \end{columns}
@@ -520,14 +500,13 @@
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
       \begin{block}{Distribution Time}
-        For $N+1$ i.i.d.\ links with $T_i \sim \mathrm{Geom}(\ps)$:
+        {\small For $N+1$ i.i.d.\ links with $T_i \sim \mathrm{Geom}(\ps)$:}
         \[
-          \mathbb{E}[T] = \mathbb{E}\!\left[\max_{i=1}^{N+1} T_i\right]
-          = \sum_{t=0}^{\infty} \left[1 - \big(1 - (1-\ps)^t\big)^{N+1}\right]
+          \mathbb{E}[T] = \sum_{t=0}^{\infty} \left[1 - \big(1 - (1-\ps)^t\big)^{N+1}\right]
         \]
 
-        \vskip 0.3em
-        Harmonic approximation:
+        \vskip 0.1em
+        {\small Harmonic approximation:}
         \[
           \mathbb{E}[T] \approx \frac{H(N+1)}{\ps}, \quad H(n) = \sum_{k=1}^n \frac{1}{k}
         \]
@@ -535,22 +514,15 @@
     \end{column}
     \begin{column}{0.48\textwidth}
       \begin{block}{Werner Model for Fidelity}
-        Each link $i$ waits $\Delta t_i = T - T_i$ time steps.\\
-        Werner parameter per link:
+        {\small Each link $i$ waits $\Delta t_i = T - T_i$ time steps.
+        Werner parameter per link:}
         \[
-          w_i = \left(1 - \tfrac{4}{3}\, p(\Delta t_i)\right)^2
+          w_i = \left(1 - p(\Delta t_i)\right)^2
         \]
-        where $p(\Delta t) = 1 - (1 - \pw)^{\Delta t}$.
-
-        \vskip 0.3em
-        Swapping multiplies Werner parameters:
+        {\small where $p(\Delta t) = 1 - (1 - \pw)^{\Delta t}$.
+        Swapping multiplies Werner parameters:}
         \[
-          w_{\mathrm{tot}} = \prod_{i=1}^{N+1} w_i
-        \]
-
-        Resulting fidelity:
-        \[
-          F = \frac{1 + 3\, w_{\mathrm{tot}}}{4}
+          w_{\mathrm{tot}} = \prod_{i=1}^{N+1} w_i \qquad F = \frac{1 + 3\, w_{\mathrm{tot}}}{4}
         \]
       \end{block}
     \end{column}
@@ -568,13 +540,10 @@
     \end{column}
     \begin{column}{0.42\textwidth}
       \begin{itemize}
-        \item MC \textbf{data points} closely follow the
-              \textbf{solid curves} (exact formula)
-        \item The harmonic approximation $H(N\!+\!1)/\ps$
-              (dashed) is accurate for medium-to-high $\ps$
-        \item Typical MC vs exact errors: $< 5\%$ with $M = 1000$
-        \item The exact formula perfectly captures the
-              order statistics of i.i.d.\ geometric random variables
+        \item MC data closely follow \textbf{exact curves}
+        \item Harmonic approx.\ $H(N\!+\!1)/\ps$ accurate for medium-high $\ps$
+        \item MC vs exact errors: $< 5\%$ ($M = 1000$)
+        \item Exact formula captures order statistics of i.i.d.\ geometric RVs
       \end{itemize}
     \end{column}
   \end{columns}
@@ -591,15 +560,14 @@
   \begin{columns}[T]
     \begin{column}{0.45\textwidth}
       \small
-      \textbf{Left --- MC vs Werner:} the Werner model
-      slightly underestimates fidelity (it uses generation times
-      independent from the simulation).
+      \textbf{Left panel:} Werner model uses the same generation times
+      as the MC run and captures the waiting-time degradation.
     \end{column}
     \begin{column}{0.45\textwidth}
       \small
-      \textbf{Right --- MC vs Plan approximation:}
-      $F \approx (1 - \frac{4}{3}\pw)^{TN}$ underestimates further,
-      being a worst-case bound.
+      \textbf{Right panel:}
+      $F \approx (1 - \pw)^{TN}$ underestimates further
+      (worst-case bound).
     \end{column}
   \end{columns}
 \end{frame}
@@ -618,14 +586,10 @@
 
       \vskip 0.8em
       \begin{itemize}
-        \item MC $>$ Werner $>$ Approximation for every $N$
-        \item The Werner model captures the qualitative trend
-              but underestimates $F$ by $\sim\!5$--$10\%$
-        \item The plan approximation diverges at large $N$
-              (worst-case is too pessimistic)
-        \item \textbf{Approximately exponential decay}
-              in $N$: each additional repeater multiplies
-              the Werner parameter
+        \item Werner tracks the MC trend across $N$
+        \item Residual deviations are small and dominated by finite sampling
+        \item Plan approx.\ diverges at large $N$ (too pessimistic)
+        \item \textbf{Exponential decay} in $N$: each repeater multiplies the Werner parameter
       \end{itemize}
     \end{column}
   \end{columns}
@@ -642,18 +606,18 @@
   \begin{columns}[T]
     \begin{column}{0.30\textwidth}
       \small
-      \textbf{Distribution of $F$:} multimodal, with a peak at $F \approx 0.65$
-      and a tail toward $F = 0.25$ (mixed state).
+      \textbf{Distribution of $F$:} left-skewed, peak at $F \approx 0.65$,
+      heavy tail toward $0.25$ (mixed state).
     \end{column}
     \begin{column}{0.34\textwidth}
       \small
-      \textbf{Scatter $F$ vs $T$:} clear \alert{negative correlation}
-      --- runs with long times have systematically low fidelity.
+      \textbf{$F$ vs $T$:} clear \alert{negative correlation},
+      long times $\to$ low fidelity.
     \end{column}
     \begin{column}{0.30\textwidth}
       \small
-      \textbf{Distribution of $T$:} heavy tail (geometric),
-      unlucky runs wait for a long time.
+      \textbf{Distribution of $T$:} heavy-tailed (geometric),
+      outliers wait much longer.
     \end{column}
   \end{columns}
 \end{frame}
@@ -665,35 +629,34 @@
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
       \begin{block}{Main Results}
-        \begin{itemize}
-          \item Swapping perfectly preserves $\phiplus$ in the ideal case
-                (\textbf{validated} for $N = 1, \ldots, 5$)
-          \item Fidelity degrades with $N$, $\pw$, and low $\ps$ ---
-                combined effect of noise and waiting time
-          \item The \textbf{Werner} model captures the qualitative behavior
-                with errors $< 10\%$
-          \item The \textbf{plan approximation} is a useful
-                pessimistic bound but not accurate
+        \vspace{-0.2em}
+        \begin{itemize}\itemsep0.15em
+          \item Swapping preserves $\phiplus$ perfectly (\textbf{validated} $N = 1 \ldots 5$)
+          \item $F$ degrades with $N$, $\pw$, low $\ps$ (noise + waiting time)
+          \item \textbf{Werner} model: qualitative agreement, errors $< 10\%$
+          \item \textbf{Plan approximation}: useful pessimistic bound
         \end{itemize}
+        \vspace{-0.2em}
       \end{block}
     \end{column}
     \begin{column}{0.48\textwidth}
       \begin{block}{Future Work}
-        \begin{itemize}
+        \vspace{-0.3em}
+        \begin{itemize}\itemsep0.05em
           \item Entanglement purification to improve $F$
           \item Adaptive generation protocols (non-i.i.d.)
           \item Non-linear topologies (trees, graphs)
           \item More realistic noise models (dephasing, losses)
-          \item Repeater count optimization given a
-                target fidelity budget
         \end{itemize}
+        \vspace{-0.3em}
       \end{block}
 
-      \vskip 0.5em
+      \vskip 0.2em
       \begin{alertblock}{Code}
+        \vspace{-0.2em}
         \centering
-        \small Julia + QuantumSavory.jl \\
-        \texttt{run\_ideal.jl} $\mid$ \texttt{run\_simulation.jl} $\mid$ \texttt{run\_analysis.jl}
+        \footnotesize\texttt{run\_ideal.jl} $\mid$ \texttt{run\_simulation.jl} $\mid$ \texttt{run\_analysis.jl}
+        \vspace{-0.2em}
       \end{alertblock}
     \end{column}
   \end{columns}
@@ -717,16 +680,17 @@
 
 \begin{frame}[noframenumbering]{Appendix: Simulation Parameters}
   \centering
+  \small
   \renewcommand{\arraystretch}{1.4}
-  \begin{tabular}{llp{8cm}}
+  \begin{tabular}{llp{6.5cm}}
     \toprule
     \textbf{Parameter} & \textbf{Values} & \textbf{Description} \\
     \midrule
     $N$ & $1, 3, 5$ (sim.) / $1$--$7$ (analysis) & Number of repeaters in the chain \\
-    $\ps$ & $0.1$--$1.0$, step $0.1$ & Per-attempt Bell pair generation success probability \\
+    $\ps$ & $0.1$--$1.0$, step $0.1$ & Bell pair generation success probability \\
     $\pw$ & $0.01, 0.05, 0.10$ & Per-time-step depolarization parameter \\
     $M$ & $500$ (sim.) / $1000$--$2000$ (analysis) & Number of Monte Carlo iterations \\
-    $\tau$ & $-1/\ln(1 - \pw)$ & Depolarization characteristic time (QuantumSavory) \\
+    $\tau$ & $-1/\ln(1 - \pw)$ & Depolarization time (QuantumSavory) \\
     \bottomrule
   \end{tabular}
 \end{frame}

@@ -9,9 +9,14 @@ include("src/metrics.jl")
 
 using .Network, .Swapping, .Metrics
 using Plots, Statistics, Printf
-using Distributions: Geometric
 
 const M_RUNS = 1000
+const ANALYSIS_FIG_DIR = joinpath("figures", "analysis")
+
+function analysis_plot_path(filename)
+    mkpath(ANALYSIS_FIG_DIR)
+    joinpath(ANALYSIS_FIG_DIR, filename)
+end
 
 # --- Theoretical formulas ---
 
@@ -33,16 +38,17 @@ function expected_max_geometric(n, p; max_terms=5000)
 end
 
 """
-Approximate fidelity from the project plan: F ≈ (1 - 4/3 p_w)^(T·N).
+Approximate fidelity from the project plan, adapted to QuantumSavory's
+fully-mixing depolarization convention: F ≈ (1 - p_w)^(T·N).
 Rough worst-case: assumes all qubits decohere for the full T.
 """
-fidelity_approx(N, T, p_w) = max(0.25, (1 - 4/3 * p_w) ^ (T * N))
+fidelity_approx(N, T, p_w) = max(0.25, (1 - p_w) ^ (T * N))
 
 """
 Werner-state fidelity for a chain of n_links = N+1 links.
 Each link i has both qubits depolarized for time wait_i = T - t_i.
-Single-qubit depol parameter: p(Δt) = 1 - (1-p_w)^Δt.
-Werner parameter per link: w_i = (1 - 4/3 p(wait_i))^2  (two independent qubits).
+Single-qubit depol parameter: p(delta_t) = 1 - (1-p_w)^delta_t.
+Werner parameter per link: w_i = (1 - p(wait_i))^2  (two independent qubits).
 Swapping multiplies Werner parameters: w_total = ∏ w_i.
 F = (1 + 3·w_total) / 4.
 """
@@ -52,7 +58,7 @@ function fidelity_werner(gen_times, p_w)
     for t_i in gen_times
         wait = T - t_i
         p_depol = 1.0 - (1.0 - p_w)^wait
-        w_link = (1.0 - 4.0/3.0 * p_depol)^2
+        w_link = (1.0 - p_depol)^2
         w_total *= w_link
     end
     (1.0 + 3.0 * w_total) / 4.0
@@ -62,20 +68,15 @@ end
 Run M single runs and return vectors of (fidelity_mc, fidelity_werner, fidelity_approx, time).
 """
 function monte_carlo_with_theory(N::Int, M::Int; p_success=1.0, p_w=0.0)
-    n_links = N + 1
     f_mc  = Vector{Float64}(undef, M)
     f_wer = Vector{Float64}(undef, M)
     f_app = Vector{Float64}(undef, M)
     times = Vector{Float64}(undef, M)
     for i in 1:M
-        f, t = Metrics.single_run(N; p_success=p_success, p_w=p_w)
-        gen_times = p_success < 1.0 ?
-            [rand(Geometric(p_success)) + 1 for _ in 1:n_links] :
-            ones(Int, n_links)
-        T_th = maximum(gen_times)
+        f, t, gen_times = Metrics.single_run_detailed(N; p_success=p_success, p_w=p_w)
         f_mc[i]  = f
         f_wer[i] = fidelity_werner(gen_times, p_w)
-        f_app[i] = fidelity_approx(N, T_th, p_w)
+        f_app[i] = fidelity_approx(N, t, p_w)
         times[i] = t
     end
     (f_mc, f_wer, f_app, times)
@@ -124,8 +125,8 @@ function analysis_distribution_time()
         plot!(plt, ps_vec, exact_vals, ls=:solid, lw=2, label="Exact N=$N", color=colors[idx])
         plot!(plt, ps_vec, harm_vals, ls=:dash, lw=1, label="H(N+1)/p N=$N", color=colors[idx], alpha=0.6)
     end
-    savefig(plt, "analysis_time_comparison.png")
-    println("\n  -> analysis_time_comparison.png\n")
+    savefig(plt, analysis_plot_path("analysis_time_comparison.png"))
+    println("\n  -> figures/analysis/analysis_time_comparison.png\n")
 end
 
 # ============================================================
@@ -183,8 +184,8 @@ function analysis_fidelity()
     end
 
     plt = plot(plt1, plt2, layout=(1, 2), size=(1200, 450))
-    savefig(plt, "analysis_fidelity_comparison.png")
-    println("\n  -> analysis_fidelity_comparison.png\n")
+    savefig(plt, analysis_plot_path("analysis_fidelity_comparison.png"))
+    println("\n  -> figures/analysis/analysis_fidelity_comparison.png\n")
 end
 
 # ============================================================
@@ -225,8 +226,8 @@ function analysis_scaling_N()
                title="Fidelity scaling (p_s=$ps_fixed, p_w=$pw_fixed)", legend=:topright)
     plot!(plt, ns, wer_vals, ls=:dash, lw=2, marker=:square, ms=3, label="Werner")
     plot!(plt, ns, app_vals, ls=:dot, lw=2, marker=:diamond, ms=3, label="Plan approx")
-    savefig(plt, "analysis_scaling_N.png")
-    println("\n  -> analysis_scaling_N.png\n")
+    savefig(plt, analysis_plot_path("analysis_scaling_N.png"))
+    println("\n  -> figures/analysis/analysis_scaling_N.png\n")
 end
 
 # ============================================================
@@ -297,8 +298,8 @@ function analysis_emergent()
                    legend=false, fillalpha=0.7)
 
     plt = plot(p1, p2, p3, layout=(1, 3), size=(1500, 400))
-    savefig(plt, "analysis_emergent.png")
-    println("\n  -> analysis_emergent.png\n")
+    savefig(plt, analysis_plot_path("analysis_emergent.png"))
+    println("\n  -> figures/analysis/analysis_emergent.png\n")
 end
 
 # ============================================================
@@ -321,4 +322,6 @@ function main()
     println("=" ^60)
 end
 
-main()
+if abspath(PROGRAM_FILE) == abspath(@__FILE__)
+    main()
+end
