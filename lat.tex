@@ -361,7 +361,7 @@ Then
 \ket{i}&=\tfrac{1}{\sqrt{2}}(\ket{0}+i\ket{1}): (\pi/2,\pi/2) & \ket{-i}&=\tfrac{1}{\sqrt{2}}(\ket{0}-i\ket{1}): (\pi/2,3\pi/2)
 \end{align*}
 
-\subsection{From Amplitudes to the Bloch Sphere}
+\subsubsection*{From Amplitudes to the Bloch Sphere}
 
 Starting from $\ket{\psi}=a\ket{0}+b\ket{1}$ with $a,b\in\mathbb{C}$ and $|a|^2+|b|^2=1$, write in polar form: $a=r_ae^{i\alpha_a}$, $b=r_be^{i\alpha_b}$. Then:
 \[
@@ -415,7 +415,7 @@ Properties:
 \end{enumerate}
 \end{tcolorbox}
 
-\subsection{Properties of Adjoint Operation}
+\subsubsection*{Properties of Adjoint Operation}
 
 The slides prove the following properties in detail:
 \begin{enumerate}[nosep]
@@ -898,13 +898,13 @@ An arbitrary single-qubit unitary $U$ can be written as $U=e^{i\alpha}R_{\hat{n}
 
 \paragraph{Simplifying consecutive applications:} $X^{1001}=X^{1000}\cdot X=(X^2)^{500}\cdot X=I^{500}\cdot X=X$.
 
-\subsection{Pauli $Y$ Gate Action}
+\subsubsection*{Pauli $Y$ Gate Action}
 
 $Y(\alpha\ket{0}+\beta\ket{1})=\bigl(\begin{smallmatrix}0&-i\\i&0\end{smallmatrix}\bigr)\bigl(\begin{smallmatrix}\alpha\\\beta\end{smallmatrix}\bigr)=\bigl(\begin{smallmatrix}-i\beta\\i\alpha\end{smallmatrix}\bigr)=-i\beta\ket{0}+i\alpha\ket{1}$.
 
 This is equivalent to $-i(\alpha\ket{0}-\beta\ket{1})$ with different phase structure. $Y$ flips both the bit and the relative phase simultaneously.
 
-\subsection{$S$ Gate: Detailed Verification}
+\subsubsection*{$S$ Gate: Detailed Verification}
 
 $S^\dagger=\bigl(\begin{smallmatrix}1&0\\0&-i\end{smallmatrix}\bigr)$. Verify: $SS^\dagger=\bigl(\begin{smallmatrix}1&0\\0&i\end{smallmatrix}\bigr)\bigl(\begin{smallmatrix}1&0\\0&-i\end{smallmatrix}\bigr)=\bigl(\begin{smallmatrix}1&0\\0&1\end{smallmatrix}\bigr)=I$. Also $S^\dagger S=I$.
 
@@ -912,7 +912,7 @@ Action: $S(\alpha\ket{0}+\beta\ket{1})=\alpha\ket{0}+i\beta\ket{1}=\alpha\ket{0}
 
 On Bloch sphere: rotation of $90°$ about $z$-axis. $S^2=\bigl(\begin{smallmatrix}1&0\\0&-1\end{smallmatrix}\bigr)=Z$. Need to apply $S$ four times to return: $S^4=Z^2=I$.
 
-\subsection{Hadamard: Interference Examples}
+\subsubsection*{Hadamard: Interference Examples}
 
 The Hadamard gate creates interference:
 \[
@@ -927,7 +927,7 @@ The two amplitudes add constructively for $\ket{0}$ (probability goes from 50\% 
 
 \textbf{Key insight:} $\ket{+}$ and $\ket{-}$ have identical measurement probabilities in the Z-basis ($1/2$ each), but $H$ distinguishes them, demonstrating that the relative phase is physically observable.
 
-\subsection{Gate Combination: Probability Computation}
+\subsubsection*{Gate Combination: Probability Computation}
 
 For the circuit $H$--$T$--$H$ applied to $\ket{0}$:
 \[
@@ -938,7 +938,7 @@ Using $e^{i\pi/4}=\frac{1+i}{\sqrt{2}}$ and Euler's formula:
 \Pr(0)=\frac{|1+e^{i\pi/4}|^2}{4}=\frac{2+2\cos(\pi/4)}{4}=\frac{2+\sqrt{2}}{4}=\cos^2(\pi/8).
 \]
 
-\subsection{$R_z$ Gate Derivation on Bloch Sphere}
+\subsubsection*{$R_z$ Gate Derivation on Bloch Sphere}
 
 For $\ket{\psi}=\cos\frac{\theta}{2}\ket{0}+e^{i\phi}\sin\frac{\theta}{2}\ket{1}$:
 \begin{align*}
@@ -1217,7 +1217,7 @@ $\ket{\Phi^+}$ cannot be factored: if $\ket{\Phi^+}=(\alpha_1\ket{0}+\beta_1\ket
 
 Local operations on one qubit transform Bell states: $(I\otimes I)\ket{\Phi^+}=\ket{\Phi^+}$, $(X\otimes I)\ket{\Phi^+}=\ket{\Psi^+}$, $(Z\otimes I)\ket{\Phi^+}=\ket{\Phi^-}$, $(iY\otimes I)\ket{\Phi^+}=\ket{\Psi^-}$.
 
-\subsection{Product States vs.\ Entangled States}
+\subsubsection*{Product States vs.\ Entangled States}
 
 \begin{tcolorbox}[defstyle, title={Definition: Product (Separable) States}]
 A state $\ket{\psi}_{AB}$ is a \textbf{product state} if it can be factored: $\ket{\psi}_{AB}=\ket{\phi}_A\otimes\ket{\chi}_B$. Otherwise it is \textbf{entangled}.
@@ -1304,7 +1304,7 @@ Important controlled gates: $CZ$ (controlled-$Z$), $CS$ (controlled-$S$), $CT$ (
 
 \paragraph{Quantum entanglement from CNOT:} $\mathrm{CNOT}(\ket{+}\otimes\ket{0})=\frac{1}{\sqrt{2}}(\ket{00}+\ket{11})=\ket{\Phi^+}$. A separable input does not always produce a separable output.
 
-\subsection{CNOT Analysis}
+\subsubsection*{CNOT Analysis}
 
 The CNOT gate acts on the general two-qubit state $\ket{\psi}=c_0\ket{00}+c_1\ket{01}+c_2\ket{10}+c_3\ket{11}$:
 \[
@@ -1321,7 +1321,7 @@ The amplitudes of $\ket{10}$ and $\ket{11}$ are swapped. In outer product form:
 \]
 A separable input becomes entangled. However, $\mathrm{CNOT}(\ket{1}\otimes\frac{1}{\sqrt{2}}(\ket{0}+\ket{1}))=\ket{1}\otimes\frac{1}{\sqrt{2}}(\ket{1}+\ket{0})$, still separable, because the control is a basis state.
 
-\subsection{Controlled-$U$ Gate}
+\subsubsection*{Controlled-$U$ Gate}
 
 For arbitrary single-qubit unitary $U$ with $U\ket{0}=U_{00}\ket{0}+U_{10}\ket{1}$ and $U\ket{1}=U_{01}\ket{0}+U_{11}\ket{1}$:
 \begin{align*}
@@ -1330,7 +1330,7 @@ CU\ket{10}&=\ket{1}\otimes U\ket{0}=U_{00}\ket{10}+U_{10}\ket{11}, & CU\ket{11}&
 \end{align*}
 Matrix: $CU=\begin{pmatrix}1&0&0&0\\0&1&0&0\\0&0&U_{00}&U_{01}\\0&0&U_{10}&U_{11}\end{pmatrix}$.
 
-\subsection{Controlled-$X$ Gate}
+\subsubsection*{Controlled-$X$ Gate}
 For $U=X$: $U_{00}=U_{11}=0$, $U_{01}=U_{10}=1$.
 \begin{align*}
 CX\ket{00}&=\ket{00}, & CX\ket{01}&=\ket{01}, \\
@@ -1345,7 +1345,7 @@ Action on a general state $\ket{\psi}=\alpha\ket{00}+\beta\ket{01}+\gamma\ket{10
 CX\ket{\psi} = \alpha\ket{0}\ket{0}+\beta\ket{0}\ket{1}+\delta\ket{1}\ket{0}+\gamma\ket{1}\ket{1}.
 \]
 
-\subsection{Controlled-$Z$ Gate}
+\subsubsection*{Controlled-$Z$ Gate}
 For $U=Z$: $U_{00}=1$, $U_{11}=-1$, $U_{01}=U_{10}=0$.
 \begin{align*}
 CZ\ket{00}&=\ket{00}, & CZ\ket{01}&=\ket{01}, \\
@@ -1360,7 +1360,7 @@ Action on a general state $\ket{\psi}=\alpha\ket{00}+\beta\ket{01}+\gamma\ket{10
 CZ\ket{\psi} = \alpha\ket{0}\ket{0}+\beta\ket{0}\ket{1}+\gamma\ket{1}\ket{0}-\delta\ket{1}\ket{1}.
 \]
 
-\subsection{Controlled-$S$ Gate}
+\subsubsection*{Controlled-$S$ Gate}
 For $U=S$: $U_{00}=1$, $U_{11}=i$, $U_{01}=U_{10}=0$.
 \begin{align*}
 CS\ket{00}&=\ket{00}, & CS\ket{01}&=\ket{01}, \\
@@ -1375,7 +1375,7 @@ Action on a general state $\ket{\psi}=\alpha\ket{00}+\beta\ket{01}+\gamma\ket{10
 CS\ket{\psi} = \alpha\ket{0}\ket{0}+\beta\ket{0}\ket{1}+\gamma\ket{1}\ket{0}+i\delta\ket{1}\ket{1}.
 \]
 
-\subsection{Controlled-$T$ Gate}
+\subsubsection*{Controlled-$T$ Gate}
 For $U=T$: $U_{00}=1$, $U_{11}=e^{i\pi/4}$, $U_{01}=U_{10}=0$.
 \begin{align*}
 CT\ket{00}&=\ket{00}, & CT\ket{01}&=\ket{01}, \\
@@ -1546,7 +1546,7 @@ The inverse is $\mathrm{BELL}^\dagger=(H\otimes I)\cdot\mathrm{CNOT}$. One can v
 \paragraph{Four Bell states from one:}
 $(I\otimes I)\ket{\Phi^+}=\ket{\Phi^+}$, $(X\otimes I)\ket{\Phi^+}=\ket{\Psi^+}$, $(Z\otimes I)\ket{\Phi^+}=\ket{\Phi^-}$, $(iY\otimes I)\ket{\Phi^+}=\ket{\Psi^-}$. A local operation on one qubit of an entangled pair changes the entire state.
 
-\subsection{Bell Circuit}
+\subsubsection*{Bell Circuit}
 
 \begin{tcolorbox}[defstyle, title={Definition: Bell Circuit (BELL Gate)}]
 $\mathrm{BELL}=\mathrm{CNOT}\cdot(H\otimes I)$. Produces Bell states from computational basis:
@@ -1555,7 +1555,7 @@ $\mathrm{BELL}\ket{xy}=\ket{\Phi_{xy}}$ for $x,y\in\{0,1\}$.
 $\mathrm{BELL}^\dagger=(H\otimes I)\cdot\mathrm{CNOT}$ reverses the process (Bell measurement).
 \end{tcolorbox}
 
-\subsection{SWAP from CNOT}
+\subsubsection*{SWAP from CNOT}
 
 The SWAP gate can be decomposed into three CNOT gates:
 \[
@@ -1671,7 +1671,7 @@ $\ket{\Phi^+}\to\ket{00}$, $\ket{\Psi^+}\to\ket{01}$, $\ket{\Phi^-}\to\ket{10}$,
     \caption{Superdense coding measurement}
     \label{fig:placeholder}
 \end{figure}
-\subsection{Teleportation Step-by-Step Derivation}
+\subsubsection*{Teleportation Step-by-Step Derivation}
 
 \paragraph{Initial state:}
 $\ket{\Psi_0}=\ket{\psi}\ket{\Phi^+}=(\alpha\ket{0}+\beta\ket{1})\frac{1}{\sqrt{2}}(\ket{00}+\ket{11})=\frac{1}{\sqrt{2}}[\alpha\ket{0}(\ket{00}+\ket{11})+\beta\ket{1}(\ket{00}+\ket{11})]$.
@@ -1707,7 +1707,7 @@ Each outcome occurs with probability $1/4$. After correction: Bob always has $\k
 \item Teleports the \emph{state}, not the physical qubit.
 \end{itemize}
 
-\subsection{Superdense Coding Complete Verification}
+\subsubsection*{Superdense Coding Complete Verification}
 
 \paragraph{Setup:} Alice and Bob share $\ket{\Phi^+}=\frac{1}{\sqrt{2}}(\ket{0_A0_B}+\ket{1_A1_B})$.
 
@@ -1772,7 +1772,7 @@ encoding $f(x)$ into the phase of the data register, leaving the target unchange
     \label{fig:placeholder}
 \end{figure}
 
-\subsection{Deutsch Algorithm Step-by-Step}
+\subsubsection*{Deutsch Algorithm Step-by-Step}
 
 \paragraph{Step 1: Initialize.} $\ket{\Psi_0}=\ket{0}\ket{1}$.
 
@@ -1811,7 +1811,7 @@ G(0,\dots,0)=\frac{1}{2^n}\sum_{x}(-1)^{f(x)} = \begin{cases}\pm 1 & \text{if }f
 Measure data register: all zeros $\Rightarrow$ constant; any nonzero $\Rightarrow$ balanced. Classical: $2^{n-1}+1$ queries worst case.
 \end{tcolorbox}
 
-\subsection{Deutsch--Jozsa Detailed Derivation}
+\subsubsection*{Deutsch--Jozsa Detailed Derivation}
 
 \paragraph{$n$-qubit Hadamard on $\ket{0^n}$:}
 \[
@@ -1878,7 +1878,7 @@ The QFT can be expressed as a product form:
 \]
 The circuit uses $n$ Hadamard gates and $n(n-1)/2$ controlled phase gates, giving $O(n^2)$ total gates, exponentially faster than the classical FFT's $O(n\cdot 2^n)$ on $N=2^n$ numbers.
 
-\subsection{Inverse Quantum Fourier Transform}
+\subsubsection*{Inverse Quantum Fourier Transform}
 
 \textbf{Definition.} The IQFT inverts the QFT mapping:
 \[
@@ -1914,7 +1914,7 @@ $R_h^\dagger$ is a $z$-axis Bloch-sphere rotation by $-2\pi/2^h$ rad:
 \textbf{Complexity.} The IQFT shares the same gate complexity as the QFT:
 $\mathcal{O}(n^2)$.
 
-\subsection{Phase Estimation Algorithm}
+\subsubsection*{Phase Estimation Algorithm}
 
 The eigenvalues of a unitary matrix have the form \(e^{i\theta}\), where \(\theta \in \mathbb{R}\). Therefore, this problem is called \textit{phase estimation}, because finding the eigenvalue is equivalent to finding the phase \(\theta\).
 \begin{tcolorbox}[algostyle, title={Algorithm}]
@@ -1941,7 +1941,7 @@ $\frac{1}{\sqrt{2^t}}\sum_{k=0}^{2^t-1}e^{2\pi ik\varphi}\ket{k}\ket{u}$.
     \caption{Quantum Solution}
     \label{fig:placeholder}
 \end{figure}
-\subsection{Order Finding and Shor's Algorithm}
+\subsubsection*{Order Finding and Shor's Algorithm}
 
 \begin{tcolorbox}[defstyle, title={Definition}]
 Given $N$ and $a$ with $\gcd(a,N)=1$, find the smallest positive integer $r$ such that $a^r\equiv 1\pmod{N}$.
@@ -2053,7 +2053,7 @@ G=\begin{pmatrix}\cos 2\theta & \sin 2\theta \\ -\sin 2\theta & \cos 2\theta\end
 \]
 \textbf{Quantum counting:} Use QPE with $G$ as the unitary to estimate $\theta$ and hence $M$.
 
-\subsection{Geometric Interpretation}
+\subsubsection*{Geometric Interpretation}
 
 Define $\ket{\text{good}}=\frac{1}{\sqrt{M}}\sum_{x:f(x)=1}\ket{x}$ and $\ket{\text{bad}}=\frac{1}{\sqrt{N-M}}\sum_{x:f(x)=0}\ket{x}$. Initial state: $\ket{s}=\sin\theta\ket{\text{good}}+\cos\theta\ket{\text{bad}}$ where $\sin\theta=\sqrt{M/N}$.
 
@@ -2073,7 +2073,7 @@ Proof: $U_f$ reflects about $\ket{\text{bad}}$ axis (phase flip $\ket{\text{good
     \label{fig:placeholder}
 \end{figure}
 
-\subsection{Grover Iterate as Rotation}
+\subsubsection*{Grover Iterate as Rotation}
 
 \begin{tcolorbox}[propstyle, title={Proposition: Grover Iterate is a Rotation}]
 In the two-dimensional subspace $\mathrm{span}\{\ket{\text{good}},\ket{\text{bad}}\}$, the Grover iterate $G=U_\perp U_f$ is:
@@ -2095,11 +2095,11 @@ Then:
 G=U_\perp U_f = \begin{pmatrix}-\cos 2\theta&\sin 2\theta\\\sin 2\theta&\cos 2\theta\end{pmatrix}\begin{pmatrix}-1&0\\0&1\end{pmatrix}=\begin{pmatrix}\cos 2\theta&\sin 2\theta\\-\sin 2\theta&\cos 2\theta\end{pmatrix}.
 \]
 
-\subsection{Quantum Amplitude Estimation}
+\subsubsection*{Quantum Amplitude Estimation}
 
 By applying QPE with $G$ as the unitary operator, one can estimate $\theta$ (and hence $M=N\sin^2\theta$). The eigenvalues of $G$ are $e^{\pm 2i\theta}$, so QPE estimates $\theta/(2\pi)$. This allows \textbf{quantum counting}: determining the number of solutions without finding them.
 
-\subsection{Grover's Algorithm with Multiple Solutions}
+\subsubsection*{Grover's Algorithm with Multiple Solutions}
 
 When $t$ out of $N$ items are solutions ($f(x)=1$), define $\sin\theta=\sqrt{t/N}$. The initial state $\ket{s}=H^{\otimes n}\ket{0^n}=\sin\theta\ket{\text{good}}+\cos\theta\ket{\text{bad}}$ has overlap $\sqrt{t/N}$ with the solution space.
 
@@ -2137,7 +2137,7 @@ Uses Z-basis $\{\ket{0},\ket{1}\}$ and X-basis $\{\ket{+},\ket{-}\}$.
 Eve intercept-resend: introduces $\ge 25\%$ error on sifted key.
 \end{tcolorbox}
 
-\subsection{BB84 Protocol Detailed Steps}
+\subsubsection*{BB84 Protocol Detailed Steps}
 
 \paragraph{Stage 1: Qubit preparation by Alice.}
 Alice generates $n$ random bits and for each randomly chooses Z-basis or X-basis. Encoding: bit 0 in Z-basis $\to\ket{0}$; bit 1 in Z-basis $\to\ket{1}$; bit 0 in X-basis $\to\ket{+}$; bit 1 in X-basis $\to\ket{-}$.
@@ -2163,11 +2163,11 @@ Error correction (reconciliation) and privacy amplification produce the final se
 
 Uses two non-orthogonal states ($\ket{0}$ for bit 0, $\ket{+}$ for bit 1). Bob's measurement can conclusively identify one state; inconclusive results discarded.
 
-\subsection{EPR (Ekert) Protocol}
+\subsubsection*{EPR (Ekert) Protocol}
 
 Shared Bell pairs. Alice and Bob randomly choose measurement bases. Security guaranteed by Bell inequality violations (CHSH). Eavesdropping disturbs correlations.
 
-\subsection{Security Foundation}
+\subsubsection*{Security Foundation}
 
 \begin{tcolorbox}[propstyle, title={Theorem: Impossibility of Distinguishing Non-Orthogonal States}]
 If Eve tries to gain information about non-orthogonal states $\ket{\psi}$ and $\ket{\phi}$ using unitary interaction $U_{SE}$:
@@ -2177,7 +2177,7 @@ U_{SE}(\ket{\psi}_S\ket{0}_E)=\ket{\psi}_S\ket{f(\psi)}_E,\quad U_{SE}(\ket{\phi
 Unitarity requires $\braket{\psi|\phi}\braket{f(\phi)|f(\psi)}=\braket{\psi|\phi}$, hence $\braket{f(\phi)|f(\psi)}=1$. Eve's ancilla states must be identical, she gains no information without disturbing the states.
 \end{tcolorbox}
 
-\subsection{B92 Protocol (Detailed)}
+\subsubsection*{B92 Protocol (Detailed)}
 
 Uses two non-orthogonal states: $\ket{0}$ (for bit 0) and $\ket{+}=\frac{1}{\sqrt{2}}(\ket{0}+\ket{1})$ (for bit 1).
 
@@ -2314,7 +2314,7 @@ where the partial trace over subsystem \(B\) is defined by
 \]
 \end{tcolorbox}
 
-\subsection{Examples}
+\subsubsection*{Examples}
 
 \textbf{Example 1: Bloch vector of a mixed state.}
 For $\rho=\begin{pmatrix}1/2 & 3\sqrt{2}/20\\3\sqrt{2}/20 & 1/2\end{pmatrix}$: comparing gives $r_x=3\sqrt{2}/10\approx 0.424$, $r_y=0$, $r_z=0$. The state is represented by a vector along the positive $x$-axis with length $r\approx 0.424$ (inside the sphere, hence mixed).
@@ -2547,7 +2547,7 @@ The Kraus operators are recovered as $E_k=\bra{k}_E U\ket{0}_E$. This was used e
 
 \paragraph{Density matrix terminology.} The diagonal entries $\rho_{kk}$ are called \textbf{populations} (probability of being in state $\ket{k}$). The off-diagonal entries $\rho_{jk}$ ($j\ne k$) are called \textbf{coherences} (correlations between quantum states). The process by which coherences decay to zero is called \textbf{decoherence}.
 
-\subsection{Amplitude Damping on Bloch Ball}
+\subsubsection*{Amplitude Damping on Bloch Ball}
 
 The Kraus operators can be decomposed in the Pauli basis:
 \[
@@ -2612,7 +2612,7 @@ By the central limit theorem, each estimate has standard deviation $\le 1/\sqrt{
 %% ============================================================
 \section{Quantum Metrics}
 
-\subsection{Introduction}
+\subsubsection*{Introduction}
 
 In practice, it is impossible to prepare the exact desired pure state with complete accuracy. The prepared state may be slightly different, or may be a mixed state due to incoherent noise. We therefore need a method for quantifying the difference between quantum states.
 
@@ -2942,7 +2942,7 @@ The test \uline{is not perfect}: success is probabilistic.
 Scheduling strategies include symmetric, nested pumping,
 greedy, and banded schemes.
 
-\subsection{Fidelity Improvement Analysis}
+\subsubsection*{Fidelity Improvement Analysis}
 
 \begin{table}[H]
 \centering
@@ -2971,7 +2971,7 @@ F'=\frac{F^2}{F^2+(1-F)^2}.
 \]
 For $F>1/2$: $F'>F$. Example: $F=0.75\Rightarrow F'=0.818$. Multiple rounds converge toward $F=1$.
 
-\subsection{Scheduling Strategies}
+\subsubsection*{Scheduling Strategies}
 
 \begin{tcolorbox}[propstyle, title={Properties}]
 \begin{itemize}[nosep]
@@ -2982,7 +2982,7 @@ For $F>1/2$: $F'>F$. Example: $F=0.75\Rightarrow F'=0.818$. Multiple rounds conv
 \end{itemize}
 \end{tcolorbox}
 
-\subsection{Purification Resources}
+\subsubsection*{Purification Resources}
 
 After $j_{\max}$ successful purification rounds, the total number of initial entangled connections needed to obtain (on average) one pair with target fidelity $F_{j_{\max}}$ is:
 \[
@@ -3043,7 +3043,7 @@ Syndrome $(s_1,s_2)$: $(0,0)\to$ no error; $(1,0)\to X_0$; $(1,1)\to X_1$; $(0,1
 \textbf{Correction:} Apply $X$ to identified qubit. Works for any single bit flip.
 \end{tcolorbox}
 
-\subsection{Three-Qubit Bit Flip Code Worked Example}
+\subsubsection*{Three-Qubit Bit Flip Code Worked Example}
 
 \paragraph{Error on left qubit:} $\alpha\ket{000}+\beta\ket{111}\xrightarrow{X\otimes I\otimes I}\alpha\ket{100}+\beta\ket{011}$.
 
@@ -3080,7 +3080,7 @@ Encoding circuit: phase flip code (CNOT$_{0;3,6}$ + Hadamards), then bit flip en
 Corrects: any single-qubit $X$, $Z$, or $Y=iXZ$ error. Bit flips corrected within blocks; phase flips corrected across blocks.
 \end{tcolorbox}
 
-\subsection{Shor Code Encoding Circuit}
+\subsubsection*{Shor Code Encoding Circuit}
 
 The encoding proceeds in two stages:
 \begin{enumerate}
@@ -3111,7 +3111,7 @@ Apply $H_0, H_3, H_6$:
 
 Small interactions with the environment move the qubit to a different location on the Bloch sphere. This is the biggest obstacle to large-scale quantum computing.
 
-\subsection{Shor Code Error Correction}
+\subsubsection*{Shor Code Error Correction}
 
 For bit flips: within each 3-qubit block, standard syndrome extraction. For phase flips: compare blocks. The Shor code corrects any single-qubit error because:
 \begin{enumerate}[nosep]
@@ -3121,15 +3121,15 @@ For bit flips: within each 3-qubit block, standard syndrome extraction. For phas
 \item Partial errors are projected onto correctable Pauli errors by the syndrome measurement.
 \end{enumerate}
 
-\subsection{Partial Bit-Flip Errors}
+\subsubsection*{Partial Bit-Flip Errors}
 
 A partial bit flip corresponds to a rotation $R_x(\epsilon)$ about the $x$-axis by angle $\epsilon<\pi$. The 3-qubit code handles this: after parity measurement (syndrome extraction), the state collapses to either the no-error or full-error case. The measurement itself projects the partial error onto a correctable Pauli error, completing the correction.
 
-\subsection{Partial Phase-Flip Errors}
+\subsubsection*{Partial Phase-Flip Errors}
 
 Similarly, a partial phase flip is a rotation $R_z(\epsilon)$ about the $z$-axis. The 3-qubit phase-flip code corrects it through parity measurements in the X-basis, projecting onto the no-error or full-error case.
 
-\subsection{Simultaneous Bit-and Phase-Flip Errors}
+\subsubsection*{Simultaneous Bit-and Phase-Flip Errors}
 
 The 9-qubit Shor code can correct an $X$ error, a $Z$ error, or both on any single qubit:
 \begin{itemize}[nosep]
