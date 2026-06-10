@@ -12,8 +12,10 @@ Built in **Julia** with [QuantumSavory.jl](https://github.com/QuantumSavory/Quan
 │   ├── swapping.jl         # Entanglement swapping protocol (BSM + Pauli corrections)
 │   ├── metrics.jl          # Fidelity computation, single run, Monte Carlo engine
 │   └── plots.jl            # Plot generation (distribution time, fidelity, heatmaps)
+├── exercises/              # Incremental QuantumSavory exercises (register → swap → noise)
 ├── run_ideal.jl            # Entry point: ideal case validation (F must equal 1.0)
 ├── run_simulation.jl       # Entry point: noisy simulation + plot generation
+├── run_analysis.jl         # Entry point: Monte Carlo vs analytical formulas (exact Werner model)
 ├── Project.toml            # Julia project dependencies
 └── Manifest.toml           # Julia dependency lockfile
 ```
@@ -32,7 +34,13 @@ julia --project=. run_ideal.jl
 
 # Phase 2-4: run noisy simulation and generate plots
 julia --project=. run_simulation.jl
+
+# Phase 5: compare Monte Carlo against analytical predictions
+julia --project=. run_analysis.jl
 ```
+
+Both entry points seed the global RNG (`seed = 2025`), so figures and the
+numbers quoted in the slides are reproducible run-to-run.
 
 ## Parameters
 

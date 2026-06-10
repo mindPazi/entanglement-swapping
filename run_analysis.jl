@@ -6,9 +6,10 @@ include("src/swapping.jl")
 include("src/metrics.jl")
 
 using .Network, .Swapping, .Metrics
-using Plots, Statistics, Printf
+using Plots, Statistics, Printf, Random
 
 const M_RUNS = 1000
+const SEED = 2025  # fixed seed so figures and quoted numbers stay in sync
 const ANALYSIS_FIG_DIR = joinpath("figures", "analysis")
 
 function analysis_plot_path(filename)
@@ -121,6 +122,41 @@ function analysis_distribution_time()
     end
     savefig(plt, analysis_plot_path("analysis_time_comparison.png"))
     println("  saved figures/analysis/analysis_time_comparison.png\n")
+end
+
+# Distribution time scaling with N at fixed p_success:
+# E[T] = E[max of N+1 geometrics] grows like H(N+1)/p_s, i.e. logarithmically in N.
+function analysis_time_vs_N()
+    println("Distribution time vs N (p_success fixed)")
+
+    ps_fixed = 0.5
+    N_range = 1:7
+
+    println(@sprintf("\n%-4s  %10s  %10s  %10s", "N", "MC mean", "Exact", "Harmonic"))
+    println("-" ^40)
+
+    mc_vals = Float64[]
+    exact_vals = Float64[]
+    harm_vals = Float64[]
+    for N in N_range
+        n_links = N + 1
+        _, _, t_mc, _ = Metrics.monte_carlo(N, M_RUNS; p_success=ps_fixed, p_w=0.0)
+        t_exact = expected_max_geometric(n_links, ps_fixed)
+        t_harmonic = harmonic(n_links) / ps_fixed
+        println(@sprintf("N=%d   %10.3f  %10.3f  %10.3f", N, t_mc, t_exact, t_harmonic))
+        push!(mc_vals, t_mc)
+        push!(exact_vals, t_exact)
+        push!(harm_vals, t_harmonic)
+    end
+
+    ns = collect(N_range)
+    plt = plot(ns, mc_vals, marker=:circle, ms=5, label="Monte Carlo",
+               xlabel="N (repeaters)", ylabel="Distribution time",
+               title="Time scaling with N (p_s=$ps_fixed)", legend=:topleft)
+    plot!(plt, ns, exact_vals, ls=:solid, lw=2, label="Exact E[max]")
+    plot!(plt, ns, harm_vals, ls=:dash, lw=2, label="H(N+1)/p_s")
+    savefig(plt, analysis_plot_path("analysis_time_vs_N.png"))
+    println("  saved figures/analysis/analysis_time_vs_N.png\n")
 end
 
 # Fidelity: MC vs Werner (per-run) vs plan approximation
@@ -281,9 +317,11 @@ function analysis_emergent()
 end
 
 function main()
+    Random.seed!(SEED)
     println("Numerical vs theoretical analysis ($M_RUNS runs per point)\n")
 
     analysis_distribution_time()
+    analysis_time_vs_N()
     analysis_fidelity()
     analysis_scaling_N()
     analysis_N1_closed_form()

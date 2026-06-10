@@ -7,14 +7,17 @@ include("src/metrics.jl")
 include("src/plots.jl")
 
 using .Network, .Swapping, .Metrics, .PlotGeneration
+using Random
 
 # Sweep parameters
 const P_SUCCESS_RANGE = 0.1:0.1:1.0
 const PW_VALUES = [0.01, 0.05, 0.10]
 const N_VALUES = [1, 3, 5]
 const M_RUNS = 500
+const SEED = 2025  # fixed seed so figures and quoted numbers stay in sync
 
 function main()
+    Random.seed!(SEED)
     # Distribution time vs p_success, one curve per chain length N
     println("Distribution time vs p_success")
     results_time = Dict{Tuple{Int,Float64}, NTuple{4,Float64}}()
