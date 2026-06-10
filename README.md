@@ -39,8 +39,10 @@ julia --project=. run_simulation.jl
 julia --project=. run_analysis.jl
 ```
 
-Both entry points seed the global RNG (`seed = 2025`), so figures and the
-numbers quoted in the slides are reproducible run-to-run.
+`run_simulation.jl` and `run_analysis.jl` seed the global RNG (`seed = 2025`),
+so figures and the numbers quoted in the slides are reproducible run-to-run
+(`run_ideal.jl` needs no seed: the ideal fidelity does not depend on the
+random BSM outcomes).
 
 ## Parameters
 

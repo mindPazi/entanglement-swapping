@@ -7,6 +7,7 @@ include("src/metrics.jl")
 
 using .Network, .Swapping, .Metrics
 using Plots, Statistics, Printf, Random
+using Plots.PlotMeasures: mm
 
 const M_RUNS = 1000
 const SEED = 2025  # fixed seed so figures and quoted numbers stay in sync
@@ -209,7 +210,7 @@ function analysis_fidelity()
         plot!(plt2, ps_vec, app_vals, ls=:dot, lw=2, label="Approx p_w=$pw", color=colors[idx])
     end
 
-    plt = plot(plt1, plt2, layout=(1, 2), size=(1200, 450))
+    plt = plot(plt1, plt2, layout=(1, 2), size=(1200, 450), left_margin=5mm)
     savefig(plt, analysis_plot_path("analysis_fidelity_comparison.png"))
     println("  saved figures/analysis/analysis_fidelity_comparison.png\n")
 end
@@ -265,8 +266,8 @@ function analysis_N1_closed_form()
 
     for ps in ps_values
         _, _, tm, _ = Metrics.monte_carlo(1, M_RUNS; p_success=ps, p_w=0.0)
-        # Exact: E[max(X1,X2)] for X_i ~ Geo(p) starting at 1
-        t_closed = expected_max_geometric(2, ps)
+        # Closed form for E[max(X1,X2)], X_i ~ Geo(p) starting at 1
+        t_closed = (3 - 2 * ps) / (ps * (2 - ps))
         err = abs(tm - t_closed) / t_closed * 100
         println(@sprintf("p=%.1f   %10.3f  %10.3f  %7.2f%%", ps, tm, t_closed, err))
     end
@@ -311,7 +312,7 @@ function analysis_emergent()
                    title="Time distribution (N=$N, p_s=$ps)",
                    legend=false, fillalpha=0.7)
 
-    plt = plot(p1, p2, p3, layout=(1, 3), size=(1500, 400))
+    plt = plot(p1, p2, p3, layout=(1, 3), size=(1500, 400), left_margin=10mm, bottom_margin=5mm)
     savefig(plt, analysis_plot_path("analysis_emergent.png"))
     println("  saved figures/analysis/analysis_emergent.png\n")
 end
