@@ -201,16 +201,16 @@
       teleports entanglement to the remote nodes.
 
       \vskip 0.8em
-      \textbf{For each repeater $R_k$:}
+      \textbf{For each repeater $R_k$ (a parallel process):}
       \begin{enumerate}
-        \item Holds two qubits entangled with left and right nodes
-        \item \textbf{BSM} on the two local qubits
-        \item Outcome determines a Pauli correction
-        \item Remote nodes end up entangled in $\phiplus$
+        \item Holds two qubits entangled with left and right neighbours
+        \item \textbf{Local BSM} on its two qubits \emph{only}
+        \item Sends the 2-bit outcome over a \textbf{classical channel}
+        \item Remote node applies the \textbf{Pauli correction} $\to \phiplus$
       \end{enumerate}
 
-      \vskip 0.8em
-      $N$ repeaters $\to$ $N$ sequential swaps $\Rightarrow$ Alice and Bob share $\phiplus$.
+      \vskip 0.6em
+      The $N$ repeaters swap \textbf{independently}; entanglement extends outward until Alice and Bob share $\phiplus$.
     \end{column}
     \begin{column}{0.45\textwidth}
       \centering
@@ -286,19 +286,17 @@
     \end{column}
     \begin{column}{0.46\textwidth}
       \begin{block}{Why Time Matters}
-        {\small If $\ps < 1$, faster links \textbf{wait} for slower ones.}
+        {\small If $\ps < 1$, links become ready at different times; the
+        end-to-end pair is delivered when the \textbf{slowest} link arrives.}
         \vspace{-0.3em}
         \[
           T = \max_{i=1}^{N+1} T_i, \quad T_i \sim \mathrm{Geom}(\ps)
         \]
         \vspace{-0.3em}
-        {\small Larger $T$ $\Rightarrow$ more depolarization $\Rightarrow$ lower $F$.}
-
-        \vskip 0.2em
-        {\footnotesize \textbf{Assumption:} all BSMs fire at $T$, classical
-        messages instantaneous. Swapping \emph{as soon as possible} would
-        free repeater qubits earlier $\Rightarrow$ synchronous model is the
-        pessimistic case.}
+        {\footnotesize Each repeater swaps \textbf{as soon as} it holds both
+        halves (at the $\max$ of its two links), so internal qubits are measured
+        early and decohere \emph{less}; only Alice's and Bob's qubits wait until
+        $T$. This asynchronous schedule is what the discrete-event simulator runs.}
       \end{block}
     \end{column}
   \end{columns}
@@ -329,9 +327,9 @@
         \draw[arr] (sw) -- (me);
         \draw[arr] (me) -- (pl);
 
-        \node[font=\tiny, qText!50, right=0.15cm of net] {topology + Bell pairs};
-        \node[font=\tiny, qText!50, right=0.15cm of sw] {BSM + corrections};
-        \node[font=\tiny, qText!50, right=0.15cm of me] {fidelity + Monte Carlo};
+        \node[font=\tiny, qText!50, right=0.15cm of net] {topology + \texttt{EntanglerProt}};
+        \node[font=\tiny, qText!50, right=0.15cm of sw] {\texttt{SwapperProt} + Tracker};
+        \node[font=\tiny, qText!50, right=0.15cm of me] {DES run + fidelity + MC};
         \node[font=\tiny, qText!50, right=0.15cm of pl] {visualization};
       \end{tikzpicture}
     \end{column}
@@ -340,23 +338,24 @@
         \vspace{-0.3em}
         {\small
         \begin{itemize}\itemsep0em
-          \item Alice and Bob: 1 memory slot each
-          \item Each repeater: 2 slots (left + right)
-          \item Topology: linear graph (\texttt{RegisterNet})
+          \item Alice/Bob: 1 slot; each repeater: 2 slots
+          \item Linear \texttt{RegisterNet} + classical channels
         \end{itemize}}
         \vspace{-0.3em}
       \end{block}
 
       \vskip 0.2em
-      \begin{block}{Simulation Pipeline}
+      \begin{block}{Discrete-event engine (\texttt{ConcurrentSim} + \texttt{ProtocolZoo})}
         \vspace{-0.3em}
-        {\small
-        \begin{enumerate}\itemsep0em
-          \item Bell pair generation on each link
-          \item Time evolution (\texttt{uptotime!}) $\to$ depolarization
-          \item Sequential swapping: $N$ BSMs
-          \item Fidelity measurement + MC ($M$ runs)
-        \end{enumerate}}
+        {\small Parallel \texttt{@resumable} entities on one simulation clock:}
+        \vspace{-0.3em}
+        {\footnotesize
+        \begin{itemize}\itemsep0em
+          \item \texttt{EntanglerProt}: heralded Bell-pair generation per link
+          \item \texttt{SwapperProt}: asynchronous local BSM at each repeater
+          \item \texttt{EntanglementTracker}: classical messages + Pauli corrections
+          \item detector process: stops at delivery, measures $F$ and $T$
+        \end{itemize}}
         \vspace{-0.3em}
       \end{block}
     \end{column}
@@ -370,30 +369,31 @@
   \begin{columns}[c]
     \begin{column}{0.48\textwidth}
       \textbf{Test:} no noise ($\pw = 0$), deterministic ($\ps = 1$)
-      $\Rightarrow$ fidelity must be \alert{exactly 1.0}.
+      $\Rightarrow$ fidelity \alert{exactly 1.0}, delivered at \alert{$T = 1$}.
 
-      \vskip 1em
+      \vskip 0.8em
       \renewcommand{\arraystretch}{1.3}
-      \begin{tabular}{ccc}
+      \begin{tabular}{cccc}
         \toprule
-        $N$ & $F$ & Status \\
+        $N$ & $F$ & $T$ & Status \\
         \midrule
-        1 & 1.000 & \textcolor{green!60!black}{\textbf{OK}} \\
-        2 & 1.000 & \textcolor{green!60!black}{\textbf{OK}} \\
-        3 & 1.000 & \textcolor{green!60!black}{\textbf{OK}} \\
-        5 & 1.000 & \textcolor{green!60!black}{\textbf{OK}} \\
+        1 & 1.000 & 1 & \textcolor{green!60!black}{\textbf{OK}} \\
+        2 & 1.000 & 1 & \textcolor{green!60!black}{\textbf{OK}} \\
+        3 & 1.000 & 1 & \textcolor{green!60!black}{\textbf{OK}} \\
+        5 & 1.000 & 1 & \textcolor{green!60!black}{\textbf{OK}} \\
         \bottomrule
       \end{tabular}
 
-      \vskip 1em
-      {\small Swapping preserves $\phiplus$ perfectly without noise.}
+      \vskip 0.8em
+      {\small Swapping preserves $\phiplus$ perfectly; one heralded-generation
+      window costs $T = 1$ (the ideal case is $1$, not $0$).}
     \end{column}
     \begin{column}{0.48\textwidth}
       \begin{block}{What it Validates}
         \begin{itemize}
-          \item Bell pair initialization
-          \item BSM + Pauli corrections
-          \item Sequential swap composition ($\forall N$)
+          \item Bell pair initialization (\texttt{EntanglerProt})
+          \item Local BSM + classical-message corrections
+          \item Asynchronous swap composition ($\forall N$, via Tracker)
           \item Fidelity via $\expval{XX}, \expval{ZZ}, \expval{YY}$
         \end{itemize}
       \end{block}
@@ -423,7 +423,7 @@
         \item Time scales as $\sim 1/\ps$ (geometric attempts per link)
         \item Bottleneck: \textbf{slowest link} $T = \max_i T_i$
         \item More repeaters $\Rightarrow$ more links $\Rightarrow$ larger max
-        \item Bands: $\pm 1$ std of the per-run distribution, clipped to $T \geq 1$ (high spread at low $\ps$)
+        \item Bands: \textbf{95\% CI} of the mean, clipped to $T \geq 1$
       \end{itemize}
     \end{column}
   \end{columns}
@@ -447,7 +447,7 @@
         \item Low $\ps$ $\to$ long wait $\to$ more depolarization $\to$ $F$ drops
         \item $\pw = 0.10$ degrades far more than $\pw = 0.01$
         \item At $\ps = 1$: $T = 1$ and no inter-link waiting, so $F \to 1$
-        \item Bands: $\pm 1$ std, clipped to the physical range $[0.25, 1]$
+        \item Bands: \textbf{95\% CI} of the mean, clipped to $[0.25, 1]$
         \item \textbf{Tradeoff:} reliable links reduce both time and degradation
       \end{itemize}}
     \end{column}
@@ -470,8 +470,9 @@
       \begin{itemize}
         \item $F$ \textbf{decreases monotonically} with $N$
         \item Two effects: more noisy qubits + larger $T = \max_i T_i$
-        \item $F \approx 0.91$ ($N\!=\!1$) to $F \approx 0.41$ ($N\!=\!7$)
-        \item Band ($\pm 1$ std) widens with $N$: more uncertainty
+        \item $F \approx 0.92$ ($N\!=\!1$) to $F \approx 0.64$ ($N\!=\!7$)
+        \item Asynchronous swaps keep $F$ well above a synchronous bound
+        \item Bands: \textbf{95\% CI} of the mean (widen slightly with $N$)
       \end{itemize}
     \end{column}
   \end{columns}
@@ -525,19 +526,23 @@
       \end{block}
     \end{column}
     \begin{column}{0.48\textwidth}
-      \begin{block}{Werner Model for Fidelity}
+      \begin{block}{Werner Model (asynchronous)}
         \small
-        Each link $i$ waits $\Delta t_i = T - T_i$ time steps.
-        Werner parameter per link:
+        Depolarized links are Werner states; each qubit survives
+        $(1-\pw)^{\Delta}$ over \emph{its own} wait. A repeater qubit is measured
+        at its local swap time $\max(T_{i-1}, T_i)$, the end qubits only at $T$:
+        \vspace{-0.2em}
         \[
-          w_i = \left(1 - p(\Delta t_i)\right)^2
+          w_i = (1-\pw)^{\,\Delta^{\mathrm{L}}_i + \Delta^{\mathrm{R}}_i}, \qquad
+          \Delta^{\mathrm{L}}_i,\Delta^{\mathrm{R}}_i \le T - T_i
         \]
-        where $p(\Delta t) = 1 - (1 - \pw)^{\Delta t}$.
-        Swapping multiplies Werner parameters:
+        Ideal BSMs multiply the Werner parameters:
+        \vspace{-0.2em}
         \[
-          w_{\mathrm{tot}} = \prod_{i=1}^{N+1} w_i \quad F = \frac{1 + 3\, w_{\mathrm{tot}}}{4}
+          w_{\mathrm{tot}} = \prod_{i=1}^{N+1} w_i, \quad F = \frac{1 + 3\, w_{\mathrm{tot}}}{4}
         \]
-        Exact for ideal BSMs $\Rightarrow$ closed-form prediction.
+        \alert{Per-qubit} waits $\Rightarrow$ higher $F$ than a synchronous
+        schedule (all qubits waiting $T - T_i$).
       \end{block}
     \end{column}
   \end{columns}
@@ -567,7 +572,7 @@
 % ============================================================
 %  ANALYSIS: FIDELITY COMPARISON
 % ============================================================
-\begin{frame}{Analysis: MC Fidelity vs Werner vs Approximation}
+\begin{frame}{Analysis: MC Fidelity vs Werner (async vs synchronous)}
   \centering
   \includegraphics[width=0.80\linewidth]{analysis_fidelity_comparison.png}
 
@@ -575,15 +580,14 @@
   \begin{columns}[T]
     \begin{column}{0.45\textwidth}
       \small
-      \textbf{Left panel:} per-run \emph{paired} comparison (same generation
-      times): Werner prediction and simulation coincide to
-      \alert{machine precision} ($\sim 10^{-16}$) --- a closed form, not a fit.
+      \textbf{Left:} the \alert{asynchronous} per-qubit Werner model matches the
+      discrete-event Monte Carlo within statistical error (overlapping 95\% CIs)
+      at every $\ps$ and $\pw$.
     \end{column}
     \begin{column}{0.45\textwidth}
       \small
-      \textbf{Right panel:}
-      $F \approx (1 - \pw)^{TN}$ underestimates
-      (heuristic from the project plan, consistently pessimistic).
+      \textbf{Right:} the \alert{synchronous} schedule (all BSMs at $T$, the
+      earlier model) systematically \emph{underestimates} $F$ for $N \ge 2$.
     \end{column}
   \end{columns}
 \end{frame}
@@ -602,10 +606,10 @@
 
       \vskip 0.8em
       \begin{itemize}
-        \item Werner curve \textbf{coincides} with MC at every $N$ (per-run paired, machine precision)
-        \item Why exact: depolarized pairs \emph{are} Werner states, and ideal BSMs multiply $w$ exactly
-        \item Plan approx.\ diverges at large $N$ (too pessimistic)
-        \item \textbf{Exponential decay} in $N$: each repeater multiplies the Werner parameter
+        \item \textbf{Async} Werner tracks MC at every $N$ (within 95\% CI)
+        \item Why: depolarized pairs \emph{are} Werner states; ideal BSMs multiply $w$ exactly
+        \item \textbf{Synchronous} Werner falls away for $N \ge 2$: the gap grows to $\sim 0.21$ at $N = 7$
+        \item The two coincide at $N = 1$ (no internal qubit is freed early)
       \end{itemize}
     \end{column}
   \end{columns}
@@ -648,10 +652,10 @@
       \begin{block}{Main Results}
         \vspace{-0.2em}
         \begin{itemize}\itemsep0.15em
-          \item Swapping preserves $\phiplus$ perfectly (\textbf{validated} $N = 1 \ldots 5$)
+          \item Built on the \textbf{discrete-event} engine: \texttt{ProtocolZoo} entities run in parallel
+          \item Swapping preserves $\phiplus$ perfectly (\textbf{validated} $N = 1 \ldots 5$, $T = 1$)
           \item $F$ degrades with $N$, $\pw$, low $\ps$ (noise + waiting time)
-          \item \textbf{Werner} closed form: \alert{exact} agreement with MC (machine precision)
-          \item \textbf{Plan approximation}: heuristic, consistently pessimistic
+          \item \textbf{Async} per-qubit Werner matches MC; the synchronous schedule underestimates $F$ for $N \ge 2$
         \end{itemize}
         \vspace{-0.2em}
       \end{block}
@@ -661,7 +665,7 @@
         \vspace{-0.3em}
         \begin{itemize}\itemsep0.05em
           \item Entanglement purification to improve $F$
-          \item Adaptive generation protocols (non-i.i.d.)
+          \item Classical-communication \textbf{latency} + cutoff times (\texttt{CutoffProt})
           \item Non-linear topologies (trees, graphs)
           \item More realistic noise models (dephasing, losses)
         \end{itemize}
@@ -708,6 +712,9 @@
     $\pw$ & $0.01, 0.05, 0.10$ & Per-time-step depolarization parameter \\
     $M$ & $500$ (sim.) / $1000$--$2000$ (analysis) & Number of Monte Carlo iterations \\
     $\tau$ & $-1/\ln(1 - \pw)$ & Depolarization time (QuantumSavory) \\
+    attempt & $1.0$ & Duration of one heralded-generation window (= 1 step) \\
+    delay & $10^{-9}$ & Classical-channel latency (kept negligible) \\
+    bands & $95\%$ CI & Confidence interval of the mean ($1.96\,s/\sqrt{M}$) \\
     Seed & $2025$ & Global RNG seed (reproducible figures) \\
     \bottomrule
   \end{tabular}

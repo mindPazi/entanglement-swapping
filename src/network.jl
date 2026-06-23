@@ -1,75 +1,81 @@
 module Network
 
 using QuantumSavory
+using QuantumSavory.ProtocolZoo: EntanglerProt
+using ConcurrentSim: Simulation, @process, Process
 using Graphs
-using Distributions: Geometric
+
+export build_network, start_entanglers!
+
+"""Bell state |Φ⁺⟩ that the heralded entanglement generation produces on each link."""
+const BELL = (Z1⊗Z1 + Z2⊗Z2) / sqrt(2)
+
+"""Duration of a single (heralded) entanglement-generation attempt.
+One attempt = one discrete time step, so the distribution time is naturally
+measured in heralded-generation windows (this is why the ideal case costs T = 1,
+not 0: generation always occupies at least one window)."""
+const ATTEMPT_TIME = 1.0
+
+"""Tiny classical-communication latency. It is kept negligible (so results match
+the "instantaneous classical messages" assumption) but strictly positive, which
+serializes otherwise simultaneous `EntanglementUpdate` messages and lets the
+`EntanglementTracker` compose the swaps of a long chain unambiguously."""
+const CLASSICAL_DELAY = 1e-9
 
 """
-Create a linear quantum network: Alice + N repeaters + Bob.
-- Alice and Bob: 1 memory slot each
-- Each repeater: 2 memory slots
-"""
-function create_network(N::Int; depolarization_rate=0.0)
-    registers = Register[]
+Build the linear quantum network used by the discrete-event simulation:
+Alice + N repeaters + Bob, laid out on a path graph.
 
-    make_reg(n_slots) = if depolarization_rate > 0
+- Alice and Bob: 1 memory slot each.
+- Each repeater: 2 memory slots (one toward the left neighbour, one toward the right).
+- Every slot carries a `Depolarization` background with τ = -1/ln(1 - p_w), so the
+  native QuantumSavory machinery applies memory decoherence on the simulation clock
+  (per step Δt = 1 the depolarization probability is exactly p_w).
+- Adjacent nodes are connected by classical channels (`classical_delay`), used to
+  transmit the BSM outcomes that drive the remote Pauli corrections.
+"""
+function build_network(N::Int; p_w=0.0)
+    make_reg(n_slots) = if p_w > 0
         Register(
             fill(Qubit(), n_slots),
             fill(QuantumOpticsRepr(), n_slots),
-            fill(Depolarization(-1 / log(1 - depolarization_rate)), n_slots)
+            fill(Depolarization(-1 / log(1 - p_w)), n_slots),
         )
     else
         Register(
             fill(Qubit(), n_slots),
-            fill(QuantumOpticsRepr(), n_slots)
+            fill(QuantumOpticsRepr(), n_slots),
         )
     end
 
-    push!(registers, make_reg(1))          # Alice
+    registers = Register[make_reg(1)]      # Alice
     for _ in 1:N
         push!(registers, make_reg(2))      # repeaters
     end
     push!(registers, make_reg(1))          # Bob
 
-    RegisterNet(grid([N + 2]), registers)
+    RegisterNet(grid([N + 2]), registers; classical_delay=CLASSICAL_DELAY)
 end
 
 """
-Generate perfect Bell pairs on all adjacent links (ideal case, instantaneous).
+Launch one `EntanglerProt` per physical link (Alice–R₁, R₁–R₂, …, R_N–Bob).
+
+Each entangler runs a single round of probabilistic heralded generation: it makes
+geometric attempts with per-attempt success probability `p_success`, each lasting
+`ATTEMPT_TIME`. A link therefore becomes ready after `Geometric(p_success) + 1`
+time steps, sampled by the simulator itself — no schedule is computed by hand.
 """
-function generate_entanglement_ideal!(net, N::Int)
-    bell = (Z1⊗Z1 + Z2⊗Z2) / sqrt(2)
+function start_entanglers!(sim::Simulation, net::RegisterNet, N::Int; p_success)
     for i in 1:(N + 1)
-        slot_left = i == 1 ? 1 : 2  # Alice: slot 1, repeaters: slot 2 (right side)
-        initialize!((net[i][slot_left], net[i + 1][1]), bell)
+        prot = EntanglerProt(sim, net, i, i + 1;
+            pairstate=BELL,
+            success_prob=p_success,
+            attempt_time=ATTEMPT_TIME,
+            rounds=1,
+            retry_lock_time=nothing,   # event-driven: react to tag changes, no polling
+        )
+        @process prot()
     end
-end
-
-"""
-Generate Bell pairs with success probability p_success on each link.
-Returns (total_time, gen_times), where total_time is the slowest link.
-"""
-function generate_entanglement_probabilistic!(net, N::Int, p_success::Float64)
-    0.0 < p_success <= 1.0 || throw(ArgumentError("p_success must be in (0, 1]"))
-
-    bell = (Z1⊗Z1 + Z2⊗Z2) / sqrt(2)
-    n_links = N + 1
-    gen_times = [rand(Geometric(p_success)) + 1 for _ in 1:n_links]
-    T = maximum(gen_times)
-
-    for i in 1:n_links
-        slot_left = i == 1 ? 1 : 2
-        initialize!((net[i][slot_left], net[i + 1][1]), bell; time=Float64(gen_times[i]))
-    end
-
-    all_slots = vcat(
-        [net[1][1]],
-        vcat([[net[k][1], net[k][2]] for k in 2:(N + 1)]...),
-        [net[N + 2][1]]
-    )
-    uptotime!(all_slots, Float64(T))
-
-    (T, gen_times)
 end
 
 end # module

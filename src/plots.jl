@@ -10,25 +10,27 @@ function simulation_plot_path(filename)
 end
 
 """
-Asymmetric ±1 std band clipped to the physical range [lo, hi],
-so the ribbon never covers impossible values (F > 1, T < 1, ...).
+95% confidence-interval band, clipped to the physical range [lo, hi] so the
+ribbon never covers impossible values (F > 1, T < 1, ...).
+`halfwidths` are the half-widths of the 95% CI of the mean (1.96·s/√M).
 Returns (lower_offsets, upper_offsets) as expected by Plots.jl `ribbon`.
 """
-clip_band(means, stds, lo, hi) = (min.(stds, means .- lo), min.(stds, hi .- means))
+clip_band(means, halfwidths, lo, hi) =
+    (min.(halfwidths, means .- lo), min.(halfwidths, hi .- means))
 
 """
 Plot 1: Distribution time vs p_success, with curves for different N values.
-`results` is a Dict (N, p_s) => (f_mean, f_std, t_mean, t_std).
-Bands: ±1 std of the per-run distribution, clipped to T ≥ 1.
+`results` is a Dict (N, p_s) => (f_mean, f_ci, t_mean, t_ci).
+Bands: 95% CI of the mean distribution time, clipped to T ≥ 1.
 """
 function plot_time_vs_psuccess(results, p_success_range; N_values=[1, 3, 5])
     ps = collect(p_success_range)
-    plt = plot(xlabel="p_success", ylabel="Distribution time (mean ± std)",
+    plt = plot(xlabel="p_success", ylabel="Distribution time (mean, 95% CI)",
                title="Distribution time vs p_success", legend=:topright)
     for N in N_values
         t_means = [results[(N, p)][3] for p in ps]
-        t_stds  = [results[(N, p)][4] for p in ps]
-        plot!(plt, ps, t_means, ribbon=clip_band(t_means, t_stds, 1.0, Inf),
+        t_cis   = [results[(N, p)][4] for p in ps]
+        plot!(plt, ps, t_means, ribbon=clip_band(t_means, t_cis, 1.0, Inf),
               fillalpha=0.2, label="N=$N", marker=:circle, ms=3)
     end
     savefig(plt, simulation_plot_path("plot_time_vs_psuccess.png"))
@@ -37,17 +39,17 @@ end
 
 """
 Plot 2: Fidelity vs p_success, with curves for different p_w values.
-`results` is a Dict (p_w, p_s) => (f_mean, f_std, t_mean, t_std).
-Bands: ±1 std of the per-run distribution, clipped to the physical range [0.25, 1].
+`results` is a Dict (p_w, p_s) => (f_mean, f_ci, t_mean, t_ci).
+Bands: 95% CI of the mean fidelity, clipped to the physical range [0.25, 1].
 """
 function plot_fidelity_vs_psuccess(results, p_success_range; N=3, pw_values=[0.01, 0.05, 0.10])
     ps = collect(p_success_range)
-    plt = plot(xlabel="p_success", ylabel="Fidelity (mean ± std)",
+    plt = plot(xlabel="p_success", ylabel="Fidelity (mean, 95% CI)",
                title="Fidelity vs p_success (N=$N)", legend=:bottomright)
     for pw in pw_values
         f_means = [results[(pw, p)][1] for p in ps]
-        f_stds  = [results[(pw, p)][2] for p in ps]
-        plot!(plt, ps, f_means, ribbon=clip_band(f_means, f_stds, 0.25, 1.0),
+        f_cis   = [results[(pw, p)][2] for p in ps]
+        plot!(plt, ps, f_means, ribbon=clip_band(f_means, f_cis, 0.25, 1.0),
               fillalpha=0.2, label="p_w=$pw", marker=:circle, ms=3)
     end
     savefig(plt, simulation_plot_path("plot_fidelity_vs_psuccess.png"))
@@ -56,15 +58,15 @@ end
 
 """
 Extra plot: Fidelity vs N (scaling with chain length).
-`results` is a Dict N => (f_mean, f_std, t_mean, t_std).
-Bands: ±1 std of the per-run distribution, clipped to the physical range [0.25, 1].
+`results` is a Dict N => (f_mean, f_ci, t_mean, t_ci).
+Bands: 95% CI of the mean fidelity, clipped to the physical range [0.25, 1].
 """
 function plot_fidelity_vs_N(results, N_range; p_success=0.5, p_w=0.05)
     ns = collect(N_range)
     f_means = [results[n][1] for n in ns]
-    f_stds  = [results[n][2] for n in ns]
-    plt = plot(ns, f_means, ribbon=clip_band(f_means, f_stds, 0.25, 1.0), fillalpha=0.2,
-               xlabel="N (repeaters)", ylabel="Fidelity (mean ± std)",
+    f_cis   = [results[n][2] for n in ns]
+    plt = plot(ns, f_means, ribbon=clip_band(f_means, f_cis, 0.25, 1.0), fillalpha=0.2,
+               xlabel="N (repeaters)", ylabel="Fidelity (mean, 95% CI)",
                title="Fidelity vs N (p_s=$p_success, p_w=$p_w)",
                legend=false, marker=:circle, ms=3)
     savefig(plt, simulation_plot_path("plot_fidelity_vs_N.png"))

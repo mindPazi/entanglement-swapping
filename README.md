@@ -3,19 +3,26 @@
 Simulation of end-to-end entanglement distribution across a linear quantum network with N repeater nodes, using the entanglement swapping protocol.
 
 Built in **Julia** with [QuantumSavory.jl](https://github.com/QuantumSavory/QuantumSavory.jl).
+The network is run as a **discrete-event simulation**: entanglement generation,
+swapping and classical tracking are `ProtocolZoo` entities (`EntanglerProt`,
+`SwapperProt`, `EntanglementTracker`) executing in parallel on a `ConcurrentSim`
+clock. Each repeater performs a *local* Bell-state measurement and broadcasts the
+outcome over a classical channel; the remote Pauli correction is applied by the
+tracker. Swaps fire **asynchronously** (as soon as a repeater holds both halves),
+so the model reflects the real protocol rather than a synchronous approximation.
 
 ## Project Structure
 
 ```text
 ├── src/
-│   ├── network.jl          # Network topology and Bell pair generation (ideal + probabilistic)
-│   ├── swapping.jl         # Entanglement swapping protocol (BSM + Pauli corrections)
-│   ├── metrics.jl          # Fidelity computation, single run, Monte Carlo engine
+│   ├── network.jl          # Linear RegisterNet + classical channels + EntanglerProt generation
+│   ├── swapping.jl         # Asynchronous SwapperProt + EntanglementTracker (classical corrections)
+│   ├── metrics.jl          # Discrete-event run, fidelity detector, Monte Carlo with 95% CI
 │   └── plots.jl            # Plot generation (distribution time, fidelity, heatmaps)
 ├── exercises/              # Incremental QuantumSavory exercises (register → swap → noise)
-├── run_ideal.jl            # Entry point: ideal case validation (F must equal 1.0)
+├── run_ideal.jl            # Entry point: ideal case validation (F = 1.0, T = 1)
 ├── run_simulation.jl       # Entry point: noisy simulation + plot generation
-├── run_analysis.jl         # Entry point: Monte Carlo vs analytical formulas (exact Werner model)
+├── run_analysis.jl         # Entry point: MC vs theory (exact time; async vs synchronous Werner)
 ├── Project.toml            # Julia project dependencies
 └── Manifest.toml           # Julia dependency lockfile
 ```

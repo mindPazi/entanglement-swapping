@@ -1,5 +1,8 @@
-# Compares the Monte Carlo results against the analytical predictions:
-# exact/harmonic distribution time and Werner/plan-approx fidelity.
+# Compares the discrete-event Monte Carlo against analytical predictions:
+#   * distribution time : exact order-statistics formula and harmonic approximation
+#   * fidelity          : per-qubit Werner model for the ASYNCHRONOUS swap schedule
+#                         (the one the simulator actually runs), contrasted with the
+#                         older SYNCHRONOUS schedule that underestimates F for N >= 2.
 
 include("src/network.jl")
 include("src/swapping.jl")
@@ -8,6 +11,7 @@ include("src/metrics.jl")
 using .Network, .Swapping, .Metrics
 using Plots, Statistics, Printf, Random
 using Plots.PlotMeasures: mm
+using Distributions: Geometric
 
 const M_RUNS = 1000
 const SEED = 2025  # fixed seed so figures and quoted numbers stay in sync
@@ -18,13 +22,14 @@ function analysis_plot_path(filename)
     joinpath(ANALYSIS_FIG_DIR, filename)
 end
 
-# --- Theoretical formulas ---
+# --- Distribution time (unchanged: T = max link-generation time is correct in both schedules) ---
 
 harmonic(n) = sum(1.0/k for k in 1:n)
 
 """
-Exact expected value of the maximum of n i.i.d. Geometric(p) random variables.
-E[max] = Σ_{t=0}^{∞} [1 - (1 - (1-p)^t)^n]
+Exact expected value of the maximum of n i.i.d. Geometric(p) generation times
+(each counted from 1, matching `Geometric(p)+1`):
+E[max] = Σ_{t=0}^{∞} [1 - (1 - (1-p)^t)^n].
 """
 function expected_max_geometric(n, p; max_terms=5000)
     q = 1 - p
@@ -37,52 +42,67 @@ function expected_max_geometric(n, p; max_terms=5000)
     s
 end
 
-"""
-Approximate fidelity from the project plan, adapted to QuantumSavory's
-fully-mixing depolarization convention: F ≈ (1 - p_w)^(T·N).
-Rough worst-case: assumes all qubits decohere for the full T.
-"""
-fidelity_approx(N, T, p_w) = max(0.25, (1 - p_w) ^ (T * N))
+# --- Per-qubit Werner model ------------------------------------------------------
+
+"""Sample the per-link generation times of one run: g_i = Geometric(p)+1 for the
+N+1 links, exactly as `EntanglerProt` does inside the simulator."""
+sample_gen_times(N, p) = [rand(Geometric(p)) + 1 for _ in 1:(N + 1)]
 
 """
-Werner-state fidelity for a chain of n_links = N+1 links.
-Each link i has both qubits depolarized for time wait_i = T - t_i.
-Single-qubit depol parameter: p(delta_t) = 1 - (1-p_w)^delta_t.
-Werner parameter per link: w_i = (1 - p(wait_i))^2  (two independent qubits).
-Swapping multiplies Werner parameters: w_total = ∏ w_i.
-F = (1 + 3·w_total) / 4.
+Fidelity for the ASYNCHRONOUS schedule the simulator runs.
+
+Each repeater swaps as soon as its two local halves exist, i.e. at
+s_k = max(g_{k-1}, g_k); the two end qubits (Alice, Bob) are only consumed at the
+end-to-end delivery time T = max_i g_i. The waiting time is therefore computed
+**per qubit**. For link i the two qubits wait until their holding node measures
+them, and survive depolarization by (1-p_w)^{wait}; the Werner parameters
+multiply across swaps:
+    F = (1 + 3 ∏_i (1-p_w)^{wait_left_i + wait_right_i}) / 4.
 """
-function fidelity_werner(gen_times, p_w)
+function fidelity_werner_async(gen_times, p_w)
+    n = length(gen_times)              # number of links = N+1
     T = maximum(gen_times)
-    w_total = 1.0
-    for t_i in gen_times
-        wait = T - t_i
-        p_depol = 1.0 - (1.0 - p_w)^wait
-        w_link = (1.0 - p_depol)^2
-        w_total *= w_link
+    exponent = 0
+    for i in 1:n
+        mt_left  = i == 1 ? T : max(gen_times[i-1], gen_times[i])   # node i (Alice if i==1)
+        mt_right = i == n ? T : max(gen_times[i], gen_times[i+1])   # node i+1 (Bob if i==n)
+        exponent += (mt_left - gen_times[i]) + (mt_right - gen_times[i])
     end
-    (1.0 + 3.0 * w_total) / 4.0
+    (1.0 + 3.0 * (1.0 - p_w)^exponent) / 4.0
 end
 
 """
-Run M single runs and return vectors of (fidelity_mc, fidelity_werner, fidelity_approx, time).
+Fidelity for the SYNCHRONOUS schedule (every BSM fired at T_max).
+
+Here *all* qubits of link i wait the full T - g_i, so the exponent is
+Σ_i 2(T - g_i). This is the model used in the original report; it coincides with
+the asynchronous one at N = 1 and underestimates the fidelity for N ≥ 2.
 """
-function monte_carlo_with_theory(N::Int, M::Int; p_success=1.0, p_w=0.0)
-    f_mc  = Vector{Float64}(undef, M)
-    f_wer = Vector{Float64}(undef, M)
-    f_app = Vector{Float64}(undef, M)
-    times = Vector{Float64}(undef, M)
+function fidelity_werner_sync(gen_times, p_w)
+    T = maximum(gen_times)
+    exponent = sum(2 * (T - g) for g in gen_times)
+    (1.0 + 3.0 * (1.0 - p_w)^exponent) / 4.0
+end
+
+"""Monte Carlo comparison at one (N, p_success, p_w) point. Returns means and 95% CI
+half-widths for the simulator and for the two Werner schedules."""
+function compare_fidelity(N, M; p_success, p_w)
+    f_des = Vector{Float64}(undef, M)
+    f_asy = Vector{Float64}(undef, M)
+    f_syn = Vector{Float64}(undef, M)
     for i in 1:M
-        result = Metrics.single_run(N; p_success=p_success, p_w=p_w)
-        f_mc[i]  = result.fidelity
-        f_wer[i] = fidelity_werner(result.gen_times, p_w)
-        f_app[i] = fidelity_approx(N, result.dist_time, p_w)
-        times[i] = result.dist_time
+        f_des[i] = Metrics.single_run(N; p_success=p_success, p_w=p_w).fidelity
+        g = sample_gen_times(N, p_success)
+        f_asy[i] = fidelity_werner_async(g, p_w)
+        f_syn[i] = fidelity_werner_sync(g, p_w)
     end
-    (f_mc, f_wer, f_app, times)
+    (mean(f_des), Metrics.ci95(std(f_des), M),
+     mean(f_asy), Metrics.ci95(std(f_asy), M),
+     mean(f_syn), Metrics.ci95(std(f_syn), M))
 end
 
-# Distribution time: MC vs exact vs harmonic approximation
+# --- Distribution time: MC vs exact vs harmonic ---------------------------------
+
 function analysis_distribution_time()
     println("Distribution time: Monte Carlo vs theory")
 
@@ -108,7 +128,6 @@ function analysis_distribution_time()
         end
     end
 
-    # Plot
     plt = plot(xlabel="p_success", ylabel="Distribution time",
                title="Distribution time: MC vs Theory", legend=:topright)
     colors = [:blue, :red, :green]
@@ -125,8 +144,7 @@ function analysis_distribution_time()
     println("  saved figures/analysis/analysis_time_comparison.png\n")
 end
 
-# Distribution time scaling with N at fixed p_success:
-# E[T] = E[max of N+1 geometrics] grows like H(N+1)/p_s, i.e. logarithmically in N.
+# Distribution time scaling with N at fixed p_success: E[T] grows like H(N+1)/p_s.
 function analysis_time_vs_N()
     println("Distribution time vs N (p_success fixed)")
 
@@ -145,9 +163,7 @@ function analysis_time_vs_N()
         t_exact = expected_max_geometric(n_links, ps_fixed)
         t_harmonic = harmonic(n_links) / ps_fixed
         println(@sprintf("N=%d   %10.3f  %10.3f  %10.3f", N, t_mc, t_exact, t_harmonic))
-        push!(mc_vals, t_mc)
-        push!(exact_vals, t_exact)
-        push!(harm_vals, t_harmonic)
+        push!(mc_vals, t_mc); push!(exact_vals, t_exact); push!(harm_vals, t_harmonic)
     end
 
     ns = collect(N_range)
@@ -160,54 +176,50 @@ function analysis_time_vs_N()
     println("  saved figures/analysis/analysis_time_vs_N.png\n")
 end
 
-# Fidelity: MC vs Werner (per-run) vs plan approximation
+# --- Fidelity: MC vs async Werner (correct) vs sync Werner (pessimistic) ---------
+
 function analysis_fidelity()
-    println("Fidelity: Monte Carlo vs Werner vs plan approximation")
+    println("Fidelity: Monte Carlo vs async Werner vs synchronous Werner")
 
     p_values = 0.1:0.1:1.0
     pw_values = [0.01, 0.05, 0.10]
     N_fixed = 3
 
-    println(@sprintf("\n%-6s  %-6s  %8s  %8s  %8s  %7s  %7s",
-        "p_w", "p_s", "MC", "Werner", "Approx", "Ew%", "Ea%"))
-    println("-" ^62)
+    println(@sprintf("\n%-6s  %-6s  %8s  %8s  %8s  %9s  %9s",
+        "p_w", "p_s", "MC", "Async", "Sync", "|MC-As|", "MC-Sync"))
+    println("-" ^66)
 
     results = Dict()
     for pw in pw_values
         for ps in p_values
-            f_mc, f_wer, f_app, _ = monte_carlo_with_theory(N_fixed, M_RUNS; p_success=ps, p_w=pw)
-            fm = mean(f_mc)
-            fw = mean(f_wer)
-            fa = mean(f_app)
-            ew = fm > 0.26 ? abs(fm - fw) / fm * 100 : 0.0
-            ea = fm > 0.26 ? abs(fm - fa) / fm * 100 : 0.0
-            println(@sprintf("pw=%.2f  p=%.1f  %8.4f  %8.4f  %8.4f  %6.1f%%  %6.1f%%",
-                pw, ps, fm, fw, fa, ew, ea))
-            results[(pw, ps)] = (fm, fw, fa)
+            fd, _, fa, _, fs, _ = compare_fidelity(N_fixed, M_RUNS; p_success=ps, p_w=pw)
+            println(@sprintf("pw=%.2f  p=%.1f  %8.4f  %8.4f  %8.4f  %9.4f  %9.4f",
+                pw, ps, fd, fa, fs, abs(fd - fa), fd - fs))
+            results[(pw, ps)] = (fd, fa, fs)
         end
     end
 
     ps_vec = collect(p_values)
     colors = [:blue, :orange, :green]
 
-    # Plot: MC vs Werner
+    # Left panel: MC vs async Werner (should coincide)
     plt1 = plot(xlabel="p_success", ylabel="Fidelity",
-                title="MC vs Werner (N=$N_fixed)", legend=:bottomright)
+                title="MC vs async Werner (N=$N_fixed)", legend=:bottomright)
     for (idx, pw) in enumerate(pw_values)
         mc_vals = [results[(pw, p)][1] for p in ps_vec]
-        wer_vals = [results[(pw, p)][2] for p in ps_vec]
+        as_vals = [results[(pw, p)][2] for p in ps_vec]
         plot!(plt1, ps_vec, mc_vals, marker=:circle, ms=4, label="MC p_w=$pw", color=colors[idx])
-        plot!(plt1, ps_vec, wer_vals, ls=:dash, lw=2, label="Werner p_w=$pw", color=colors[idx])
+        plot!(plt1, ps_vec, as_vals, ls=:dash, lw=2, label="Async p_w=$pw", color=colors[idx])
     end
 
-    # Plot: MC vs plan approx
+    # Right panel: MC vs synchronous Werner (underestimates for N>=2)
     plt2 = plot(xlabel="p_success", ylabel="Fidelity",
-                title="MC vs Plan approx (N=$N_fixed)", legend=:bottomright)
+                title="MC vs synchronous Werner (N=$N_fixed)", legend=:bottomright)
     for (idx, pw) in enumerate(pw_values)
         mc_vals = [results[(pw, p)][1] for p in ps_vec]
-        app_vals = [results[(pw, p)][3] for p in ps_vec]
+        sy_vals = [results[(pw, p)][3] for p in ps_vec]
         plot!(plt2, ps_vec, mc_vals, marker=:circle, ms=4, label="MC p_w=$pw", color=colors[idx])
-        plot!(plt2, ps_vec, app_vals, ls=:dot, lw=2, label="Approx p_w=$pw", color=colors[idx])
+        plot!(plt2, ps_vec, sy_vals, ls=:dot, lw=2, label="Sync p_w=$pw", color=colors[idx])
     end
 
     plt = plot(plt1, plt2, layout=(1, 2), size=(1200, 450), left_margin=5mm)
@@ -215,7 +227,7 @@ function analysis_fidelity()
     println("  saved figures/analysis/analysis_fidelity_comparison.png\n")
 end
 
-# Fidelity scaling with N
+# Fidelity scaling with N: async Werner tracks the MC, synchronous Werner falls away.
 function analysis_scaling_N()
     println("Fidelity scaling with N")
 
@@ -223,40 +235,34 @@ function analysis_scaling_N()
     ps_fixed = 0.5
     pw_fixed = 0.05
 
-    println(@sprintf("\n%-4s  %8s  %8s  %8s  %7s  %7s",
-        "N", "MC F", "Werner", "Approx", "Ew%", "Ea%"))
-    println("-" ^52)
+    println(@sprintf("\n%-4s  %8s  %8s  %8s  %9s  %9s",
+        "N", "MC F", "Async", "Sync", "|MC-As|", "MC-Sync"))
+    println("-" ^56)
 
-    mc_vals = Float64[]
-    wer_vals = Float64[]
-    app_vals = Float64[]
+    mc_vals = Float64[]; mc_cis = Float64[]
+    as_vals = Float64[]; sy_vals = Float64[]
     for N in N_range
-        f_mc, f_wer, f_app, _ = monte_carlo_with_theory(N, M_RUNS; p_success=ps_fixed, p_w=pw_fixed)
-        fm = mean(f_mc)
-        fw = mean(f_wer)
-        fa = mean(f_app)
-        ew = fm > 0.26 ? abs(fm - fw) / fm * 100 : 0.0
-        ea = fm > 0.26 ? abs(fm - fa) / fm * 100 : 0.0
-        println(@sprintf("N=%d   %8.4f  %8.4f  %8.4f  %6.1f%%  %6.1f%%", N, fm, fw, fa, ew, ea))
-        push!(mc_vals, fm)
-        push!(wer_vals, fw)
-        push!(app_vals, fa)
+        fd, fd_ci, fa, _, fs, _ = compare_fidelity(N, M_RUNS; p_success=ps_fixed, p_w=pw_fixed)
+        println(@sprintf("N=%d   %8.4f  %8.4f  %8.4f  %9.4f  %9.4f",
+            N, fd, fa, fs, abs(fd - fa), fd - fs))
+        push!(mc_vals, fd); push!(mc_cis, fd_ci); push!(as_vals, fa); push!(sy_vals, fs)
     end
 
     ns = collect(N_range)
-    plt = plot(ns, mc_vals, marker=:circle, ms=5, label="Monte Carlo",
+    plt = plot(ns, mc_vals, ribbon=mc_cis, fillalpha=0.2, marker=:circle, ms=5,
+               label="Monte Carlo (95% CI)",
                xlabel="N (repeaters)", ylabel="Fidelity",
                title="Fidelity scaling (p_s=$ps_fixed, p_w=$pw_fixed)", legend=:topright)
-    plot!(plt, ns, wer_vals, ls=:dash, lw=2, marker=:square, ms=3, label="Werner")
-    plot!(plt, ns, app_vals, ls=:dot, lw=2, marker=:diamond, ms=3, label="Plan approx")
+    plot!(plt, ns, as_vals, ls=:dash, lw=2, marker=:square, ms=3, label="Async Werner")
+    plot!(plt, ns, sy_vals, ls=:dot, lw=2, marker=:diamond, ms=3, label="Synchronous Werner")
     savefig(plt, analysis_plot_path("analysis_scaling_N.png"))
     println("  saved figures/analysis/analysis_scaling_N.png\n")
 end
 
-# N=1 closed form check
+# N=1 closed form check for the distribution time.
 function analysis_N1_closed_form()
     println("N=1 closed form check")
-    println("\nFor N=1, T = max(Geo(p), Geo(p)).")
+    println("\nFor N=1, T = max(Geo(p)+1, Geo(p)+1).")
     println("E[T] = (3 - 2p) / (p(2-p))  [exact for max of 2 geometrics]\n")
 
     ps_values = 0.1:0.1:0.9
@@ -266,7 +272,6 @@ function analysis_N1_closed_form()
 
     for ps in ps_values
         _, _, tm, _ = Metrics.monte_carlo(1, M_RUNS; p_success=ps, p_w=0.0)
-        # Closed form for E[max(X1,X2)], X_i ~ Geo(p) starting at 1
         t_closed = (3 - 2 * ps) / (ps * (2 - ps))
         err = abs(tm - t_closed) / t_closed * 100
         println(@sprintf("p=%.1f   %10.3f  %10.3f  %7.2f%%", ps, tm, t_closed, err))
@@ -274,7 +279,7 @@ function analysis_N1_closed_form()
     println()
 end
 
-# Fidelity distribution shape and fidelity-time correlation
+# Fidelity distribution shape and fidelity-time correlation.
 function analysis_emergent()
     println("Fidelity distribution and fidelity-time correlation")
 
@@ -298,16 +303,11 @@ function analysis_emergent()
         mean(times), std(times), minimum(times), maximum(times)))
     println(@sprintf("  Correlation(F, T) = %.4f  (expected: negative)", cor(fidelities, times)))
 
-    # Fidelity distribution histogram
     p1 = histogram(fidelities, bins=30, xlabel="Fidelity", ylabel="Count",
                     title="Fidelity distribution (N=$N, p_s=$ps, p_w=$pw)",
                     legend=false, fillalpha=0.7)
-
-    # Scatter: fidelity vs time
     p2 = scatter(times, fidelities, xlabel="Distribution time", ylabel="Fidelity",
                  title="Fidelity vs Time (N=$N)", legend=false, ms=2, alpha=0.3)
-
-    # Time distribution histogram
     p3 = histogram(times, bins=30, xlabel="Distribution time", ylabel="Count",
                    title="Time distribution (N=$N, p_s=$ps)",
                    legend=false, fillalpha=0.7)

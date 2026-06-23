@@ -1,5 +1,7 @@
-# Monte Carlo of the noisy chain.
-# Sweeps p_success and p_w, then writes the figures under figures/simulation/.
+# Monte Carlo of the noisy chain, driven by the discrete-event simulator.
+# Each sample is a full ProtocolZoo run (EntanglerProt + asynchronous SwapperProt +
+# EntanglementTracker). Sweeps p_success and p_w, then writes the figures under
+# figures/simulation/. Reported bands are 95% confidence intervals of the mean.
 
 include("src/network.jl")
 include("src/swapping.jl")
@@ -25,7 +27,7 @@ function main()
         for ps in P_SUCCESS_RANGE
             fm, fs, tm, ts = Metrics.monte_carlo(N, M_RUNS; p_success=ps, p_w=0.0)
             results_time[(N, ps)] = (fm, fs, tm, ts)
-            println("  N=$N  p_success=$ps  T=$(round(tm, digits=2)) ± $(round(ts, digits=2))")
+            println("  N=$N  p_success=$ps  T=$(round(tm, digits=2)) ± $(round(ts, digits=2)) (95% CI)")
         end
     end
     PlotGeneration.plot_time_vs_psuccess(results_time, P_SUCCESS_RANGE; N_values=N_VALUES)
@@ -39,7 +41,7 @@ function main()
         for ps in P_SUCCESS_RANGE
             fm, fs, tm, ts = Metrics.monte_carlo(N_fixed, M_RUNS; p_success=ps, p_w=pw)
             results_fidelity[(pw, ps)] = (fm, fs, tm, ts)
-            println("  p_w=$pw  p_success=$ps  F=$(round(fm, digits=4)) ± $(round(fs, digits=4))")
+            println("  p_w=$pw  p_success=$ps  F=$(round(fm, digits=4)) ± $(round(fs, digits=4)) (95% CI)")
         end
     end
     PlotGeneration.plot_fidelity_vs_psuccess(results_fidelity, P_SUCCESS_RANGE; N=N_fixed, pw_values=PW_VALUES)
@@ -52,7 +54,7 @@ function main()
     for n in N_RANGE
         fm, fs, tm, ts = Metrics.monte_carlo(n, M_RUNS; p_success=0.5, p_w=0.05)
         results_vs_N[n] = (fm, fs, tm, ts)
-        println("  N=$n  F=$(round(fm, digits=4)) ± $(round(fs, digits=4))")
+        println("  N=$n  F=$(round(fm, digits=4)) ± $(round(fs, digits=4)) (95% CI)")
     end
     PlotGeneration.plot_fidelity_vs_N(results_vs_N, N_RANGE; p_success=0.5, p_w=0.05)
     println("  saved figures/simulation/plot_fidelity_vs_N.png\n")
