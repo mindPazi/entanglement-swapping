@@ -263,41 +263,42 @@
     \begin{column}{0.50\textwidth}
       Quantum memories \textbf{depolarize} while waiting.
 
-      \vskip 0.5em
+      \vskip 0.2em
       {\small Single-qubit depolarizing channel (QuantumSavory convention):}
+      \vspace{-0.3em}
       \[
         \mathcal{E}(\rho) = (1 - p)\,\rho + p\,\frac{I}{2}
       \]
 
-      \vskip 0.2em
+      \vspace{-0.4em}
       {\small Noise tied to waiting time:}
+      \vspace{-0.3em}
       \[
         p(\Delta t) = 1 - e^{-\Delta t / \tau}
       \]
 
-      \vskip 0.2em
+      \vspace{-0.4em}
       {\small $\tau = -1/\ln(1 - \pw)$, \; $\pw$ = per-step depolarization rate.}
+
+      \vskip 0.25em
+      {\small \textbf{Fidelity:}\;
+      $F = \tfrac{1}{4}\!\bigl(1 + \expval{XX} + \expval{ZZ} - \expval{YY}\bigr)$}
     \end{column}
     \begin{column}{0.46\textwidth}
       \begin{block}{Why Time Matters}
         {\small If $\ps < 1$, faster links \textbf{wait} for slower ones.}
+        \vspace{-0.3em}
         \[
           T = \max_{i=1}^{N+1} T_i, \quad T_i \sim \mathrm{Geom}(\ps)
         \]
+        \vspace{-0.3em}
         {\small Larger $T$ $\Rightarrow$ more depolarization $\Rightarrow$ lower $F$.}
 
         \vskip 0.2em
-        {\footnotesize \textbf{Assumption:} all BSMs execute at $T$, classical
-        messages are instantaneous. Swapping \emph{as soon as possible} would
-        measure out repeater qubits earlier $\Rightarrow$ this synchronous
-        model is the pessimistic case.}
-      \end{block}
-
-      \vskip 0.2em
-      \begin{block}{Fidelity}
-        \vspace{-0.6em}
-        \[ F = \tfrac{1}{4}\!\left(1 + \expval{XX} + \expval{ZZ} - \expval{YY}\right) \]
-        \vspace{-0.8em}
+        {\footnotesize \textbf{Assumption:} all BSMs fire at $T$, classical
+        messages instantaneous. Swapping \emph{as soon as possible} would
+        free repeater qubits earlier $\Rightarrow$ synchronous model is the
+        pessimistic case.}
       \end{block}
     \end{column}
   \end{columns}
@@ -440,14 +441,15 @@
     \begin{column}{0.44\textwidth}
       \textbf{Parameters:} $N = 3$, $M = 500$ runs
 
-      \vskip 0.8em
-      \begin{itemize}
+      \vskip 0.6em
+      {\small
+      \begin{itemize}\itemsep0.15em
         \item Low $\ps$ $\to$ long wait $\to$ more depolarization $\to$ $F$ drops
         \item $\pw = 0.10$ degrades far more than $\pw = 0.01$
         \item At $\ps = 1$: $T = 1$ and no inter-link waiting, so $F \to 1$
         \item Bands: $\pm 1$ std, clipped to the physical range $[0.25, 1]$
         \item \textbf{Tradeoff:} reliable links reduce both time and degradation
-      \end{itemize}
+      \end{itemize}}
     \end{column}
   \end{columns}
 \end{frame}
@@ -487,16 +489,17 @@
     \begin{column}{0.44\textwidth}
       \textbf{Parameters:} $N = 3$, $M = 500$
 
-      \vskip 0.8em
+      \vskip 0.6em
       2D mean fidelity in $(\ps, \pw)$ space.
 
-      \vskip 0.5em
-      \begin{itemize}
+      \vskip 0.4em
+      {\small
+      \begin{itemize}\itemsep0.15em
         \item \textbf{Bottom-right} (yellow): high $\ps$, low $\pw$ $\Rightarrow$ $F \to 1$
         \item \textbf{Top-left} (purple): low $\ps$, high $\pw$ $\Rightarrow$ $F \to 0.25$ (maximally mixed)
         \item Gradient shows \textbf{non-linearity}: at low $\ps$ the waiting time amplifies memory noise
         \item Right edge: $F = 1$ for every $\pw$ (zero waiting time)
-      \end{itemize}
+      \end{itemize}}
     \end{column}
   \end{columns}
 \end{frame}
@@ -508,13 +511,14 @@
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
       \begin{block}{Distribution Time}
-        {\small For $N+1$ i.i.d.\ links with $T_i \sim \mathrm{Geom}(\ps)$:}
+        \small
+        For $N+1$ i.i.d.\ links with $T_i \sim \mathrm{Geom}(\ps)$:
         \[
           \mathbb{E}[T] = \sum_{t=0}^{\infty} \left[1 - \big(1 - (1-\ps)^t\big)^{N+1}\right]
         \]
 
         \vskip 0.1em
-        {\small Harmonic approximation:}
+        Harmonic approximation:
         \[
           \mathbb{E}[T] \approx \frac{H(N+1)}{\ps}, \quad H(n) = \sum_{k=1}^n \frac{1}{k}
         \]
@@ -522,17 +526,18 @@
     \end{column}
     \begin{column}{0.48\textwidth}
       \begin{block}{Werner Model for Fidelity}
-        {\small Each link $i$ waits $\Delta t_i = T - T_i$ time steps.
-        Werner parameter per link:}
+        \small
+        Each link $i$ waits $\Delta t_i = T - T_i$ time steps.
+        Werner parameter per link:
         \[
           w_i = \left(1 - p(\Delta t_i)\right)^2
         \]
-        {\small where $p(\Delta t) = 1 - (1 - \pw)^{\Delta t}$.
-        Swapping multiplies Werner parameters:}
+        where $p(\Delta t) = 1 - (1 - \pw)^{\Delta t}$.
+        Swapping multiplies Werner parameters:
         \[
-          w_{\mathrm{tot}} = \prod_{i=1}^{N+1} w_i \qquad F = \frac{1 + 3\, w_{\mathrm{tot}}}{4}
+          w_{\mathrm{tot}} = \prod_{i=1}^{N+1} w_i \quad F = \frac{1 + 3\, w_{\mathrm{tot}}}{4}
         \]
-        {\small Exact for ideal BSMs $\Rightarrow$ closed-form prediction of the simulation.}
+        Exact for ideal BSMs $\Rightarrow$ closed-form prediction.
       \end{block}
     \end{column}
   \end{columns}
@@ -564,9 +569,9 @@
 % ============================================================
 \begin{frame}{Analysis: MC Fidelity vs Werner vs Approximation}
   \centering
-  \includegraphics[width=0.85\linewidth]{analysis_fidelity_comparison.png}
+  \includegraphics[width=0.80\linewidth]{analysis_fidelity_comparison.png}
 
-  \vskip 0.4em
+  \vskip 0.3em
   \begin{columns}[T]
     \begin{column}{0.45\textwidth}
       \small
@@ -694,7 +699,7 @@
   \centering
   \small
   \renewcommand{\arraystretch}{1.4}
-  \begin{tabular}{llp{6.5cm}}
+  \begin{tabular}{l p{3.2cm} p{6.0cm}}
     \toprule
     \textbf{Parameter} & \textbf{Values} & \textbf{Description} \\
     \midrule
