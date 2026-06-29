@@ -29,6 +29,20 @@ Tutti questi protocolli usano lo stesso lego: **una coppia di Bell condivisa + c
 3. Alice **manda m1,m2 a Bob** (canale classico).
 4. Bob applica `Zᵐ¹ Xᵐ²` su q3 → ottiene `|ψ⟩`.
 
+### Cosa succede (il flusso)
+
+1. **La misura di Alice fa due cose insieme.** Il `CNOT + H` su `(q1, q2)` seguito dalla misura:
+   - (a) produce **2 bit classici** `(m1, m2)` — esito casuale fra 4 possibilità;
+   - (b) **lascia il qubit di Bob (q3) in una versione "modificata" di `|ψ⟩`** — uno dei 4 Pauli-flip
+     (`|ψ⟩`, `X|ψ⟩`, `Z|ψ⟩`, `XZ|ψ⟩`). La misura distrugge l'originale su Alice e "scarica" `|ψ⟩`
+     (sporcato) su q3 tramite l'entanglement.
+2. **I 2 bit dicono QUALE modifica è capitata** — sono il "codice" dello sporco, non lo stato.
+3. **Bob decodifica:** applica il **gate inverso** indicato dai bit (`X`, `Z` o entrambi) → annulla
+   il Pauli → riottiene il `|ψ⟩` pulito.
+
+> In sintesi: *misura di Alice → **2 bit classici** + **q3 di Bob sporcato**; i bit dicono **come**
+> è sporcato; Bob applica il **gate inverso** e decodifica `|ψ⟩`.*
+
 ### Tabella di correzione
 
 | m1 m2 | stato di Bob prima | Bob applica |
@@ -80,19 +94,30 @@ condividono `|Φ⁺⟩`.
 
 **Scopo:** Alice manda **2 bit classici** a Bob spedendo **1 solo qubit**, usando una coppia di Bell condivisa.
 
-### Protocollo
+### Il flusso (passo per passo)
 
-Coppia `|Φ⁺⟩` condivisa. Alice codifica i suoi 2 bit (b1 b2) sul **suo** qubit:
+1. **Stato di partenza.** Alice e Bob **condividono già** una coppia `|Φ⁺⟩` (un qubit a testa).
+   Alice ha **2 bit classici** `(b1, b2)` da mandare a Bob.
+2. **Codifica.** Alice applica **un Pauli** (scelto dai 2 bit) **sul suo qubit** → la coppia
+   condivisa si trasforma in **uno dei 4 stati di Bell** (uno per ogni messaggio possibile).
+3. **Invio.** Alice **spedisce fisicamente il suo qubit** a Bob (è il **qubit** a viaggiare, non bit).
+4. **Decodifica.** Bob ora ha **entrambi** i qubit → fa una **misura di Bell** (`CNOT + H + misura`)
+   → capisce quale dei 4 stati di Bell è → **legge i 2 bit**.
 
-| bit | Alice applica | stato risultante |
-| ----- | --------------- | ------------------ |
+### La codifica (passo 2)
+
+Quale Pauli per quali bit, e in quale stato di Bell finisce la coppia condivisa:
+
+| bit (b1 b2) | Alice applica | la coppia diventa |
+| --- | --- | --- |
 | 00 | I | \|Φ⁺⟩ |
 | 01 | X | \|Ψ⁺⟩ |
 | 10 | Z | \|Φ⁻⟩ |
 | 11 | ZX | \|Ψ⁻⟩ |
 
-Poi Alice **spedisce il suo qubit** a Bob. Bob ora ha **entrambi** i qubit e fa una
-**misura di Bell** (CNOT poi H, poi misura) → legge i 2 bit:
+### La decodifica (passo 4)
+
+Bob ha entrambi i qubit (`qA` ricevuto + `qB` la sua metà) e fa la **misura di Bell**:
 
 ```text
  qA ──●──H── M  (b1)
@@ -100,7 +125,8 @@ Poi Alice **spedisce il suo qubit** a Bob. Bob ora ha **entrambi** i qubit e fa 
  qB ──⊕───── M  (b2)
 ```
 
-I 4 stati di Bell sono ortogonali → Bob li distingue con certezza → 2 bit esatti.
+I 4 stati di Bell sono **ortogonali** → Bob li distingue **con certezza** → 2 bit esatti.
+(La misura di Bell `CNOT + H + misura` è il **circuito di Bell al contrario**, vedi §13.)
 
 ### Il punto
 
@@ -169,10 +195,51 @@ QKD (distribuzione di chiave) basata sull'**entanglement** e sul **test di Bell*
 - Un intercettatore (Eve) che misura/clona introduce realismo locale → **abbassa la violazione** (`S→≤2`).
 - Quindi: **se il test di Bell passa, la chiave è sicura**; se `S` cala, c'è Eve → si scarta.
 
-### Differenza da BB84
+### BB84 — l'altro QKD (prepare-and-measure, SENZA entanglement)
 
-- BB84: sicurezza dal **no-cloning** di singoli qubit non ortogonali.
-- E91: sicurezza dall'**entanglement** + violazione di Bell. (Concetti collegati.)
+Primo protocollo di QKD (Bennett-Brassard, 1984). **Niente coppie di Bell**: Alice **prepara**
+qubit e li **manda**, Bob li **misura**.
+
+I 4 stati che Alice può mandare (valore × base):
+
+| bit | base Z | base X |
+| --- | --- | --- |
+| 0 | \|0⟩ | \|+⟩ |
+| 1 | \|1⟩ | \|−⟩ |
+
+Il protocollo:
+
+1. **Alice prepara.** Per ogni bit sceglie **a caso** un valore 0/1 **e** una base (Z o X), e
+   manda il corrispondente fra i 4 stati sopra.
+2. **Bob misura** ogni qubit in una **base a caso** (Z o X), indipendente da Alice.
+3. **Sifting:** annunciano pubblicamente le **basi** (non i valori) e tengono solo i bit dove hanno
+   usato la **stessa base** (~50%). Lì il risultato di Bob = bit di Alice → **chiave condivisa**.
+4. **Controllo spia:** confrontano un campione dei bit siftati. Se Eve ha misurato i qubit li ha
+   **disturbati** → compaiono **errori** → tasso d'errore alto ⇒ scartano.
+
+**Sicurezza (no-cloning + disturbo):** Eve non può **copiare** i qubit (no-cloning) e, non sapendo
+la base, deve **indovinarla**; quando sbaglia base **collassa** lo stato nella base sbagliata →
+introduce ~25% di errori sui bit siftati → Alice e Bob la **beccano**.
+
+**Come si scopre il disturbo (in pratica):** dopo il sifting i bit di Alice e Bob dovrebbero
+essere **identici**. Allora **sacrificano un campione** a caso e lo confrontano **pubblicamente**:
+
+- **errore ≈ 0** → niente spia → tengono il resto come chiave;
+- **errore alto** (Eve dà ~25%: sbaglia base nel 50% dei casi, e lì Bob ha 50% di errore → ¼)
+  → c'è Eve → **scartano tutto**.
+
+I bit del campione, ormai annunciati, si buttano (non sono più segreti).
+
+### E91 vs BB84
+
+| | **BB84** | **E91** |
+| --- | --- | --- |
+| tipo | prepare-and-measure | entanglement-based |
+| risorsa | Alice prepara e manda qubit | coppie di Bell condivise |
+| chi misura | solo Bob | Alice **e** Bob |
+| sicurezza da | **no-cloning** + disturbo | **violazione di Bell** (`S>2`) |
+
+Sono **parenti stretti**: E91 è "la versione con entanglement" di BB84.
 
 ---
 
