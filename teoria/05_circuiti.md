@@ -6,11 +6,15 @@ Questo è uno **skill**, non teoria. All'esame ti danno un circuito e devi tracc
 
 ## 21. Metodo generale: risolvere un circuito
 
-1. **Scrivi lo stato iniziale** (di solito `|0…0⟩`).
-2. **Applica un gate alla volta, da sinistra a destra.** Due modi:
-   - *basis-tracking* (più veloce a mano): segui cosa fa il gate a ogni `|...⟩` della sovrapposizione;
-   - *matrice × vettore* (più meccanico): moltiplica.
-3. **Alla misura:** le probabilità sono i `|ampiezza|²`.
+Risolvere un circuito = **seguire lo stato che cambia, gate dopo gate**. Tre fasi:
+
+- **INPUT** = lo stato **iniziale** dei qubit (da cui parti). Di solito `|0…0⟩` (tutti resettati).
+- **SVOLGIMENTO** = applichi i gate **uno alla volta, da sinistra a destra**, aggiornando lo stato
+  a ogni passo. Ogni gate prende lo stato corrente e lo trasforma nel successivo. Due modi:
+  *basis-tracking* (vedi cosa fa il gate a ogni `|...⟩` presente, più veloce a mano) oppure
+  *matrice × vettore* (moltiplichi, più meccanico).
+- **OUTPUT** = lo stato **finale** (dopo l'ultimo gate). Se il circuito finisce con una **misura**,
+  le **probabilità** degli esiti sono i `|ampiezza|²` dello stato finale.
 
 Promemoria gate (da `01_fondamenta.md`):
 
@@ -18,19 +22,32 @@ Promemoria gate (da `01_fondamenta.md`):
 - `X` scambia |0⟩↔|1⟩. `Z` mette −1 su |1⟩. `CZ` mette −1 **solo** su |11⟩.
 - `CNOT`: flippa il target se il controllo è |1⟩.
 
-### Esempio svolto (1 qubit)
-
-Circuito `H – Z – H` su `|0⟩`:
+### Esempio svolto (1 qubit): `H – Z – H` su `|0⟩`
 
 ```text
-|0⟩ --H--> |+⟩ --Z--> (|0⟩−|1⟩)/√2 = |−⟩ --H--> |1⟩
+INPUT:     |0⟩
+
+H:   H|0⟩ = |+⟩ = (|0⟩+|1⟩)/√2
+Z:   Z|+⟩ = (|0⟩−|1⟩)/√2 = |−⟩      (Z mette −1 su |1⟩)
+H:   H|−⟩ = |1⟩
+
+OUTPUT:    |1⟩   → misurando esce SEMPRE 1 (deterministico)
 ```
 
-Risultato: `|1⟩` (deterministico). Infatti `HZH = X`. ✅
+(Infatti `HZH = X`, e `X|0⟩=|1⟩`.)
 
-### Esempio svolto (2 qubit)
+### Esempio svolto (2 qubit): `H(q1) – CNOT(q1→q2)` su `|00⟩`
 
-`H(q1) – CNOT(q1→q2)` su `|00⟩` → `|Φ⁺⟩` (la coppia di Bell, vedi `01_fondamenta.md`).
+```text
+INPUT:     |00⟩
+
+H su q1:   (H|0⟩)⊗|0⟩ = |+⟩⊗|0⟩ = (|00⟩+|10⟩)/√2
+CNOT:      flippa q2 se q1=1:   |00⟩→|00⟩,  |10⟩→|11⟩
+           = (|00⟩+|11⟩)/√2
+
+OUTPUT:    |Φ⁺⟩ = (|00⟩+|11⟩)/√2
+           → misurando: 50% "00", 50% "11"   (|ampiezza|² = 1/2 ciascuno)
+```
 
 ---
 
